@@ -281,6 +281,23 @@ Use browser automation at an exact 240 by 282 viewport. Hardware release gates s
 8. Move to stable versioned static hosting after the device spike.
 9. Keep ADB and custom firmware outside scope unless a measured Creation limitation blocks a required workflow.
 
+## Executable Validation Demo
+
+The repository now includes `demo/`, a build-free Creation probe implementing the workflow described above:
+
+- `demo/index.html`: 240x282 Creation entry point.
+- `demo/app.js`: RabbitOS event adapter, desktop fallbacks, capability report, bounded diagnostics, and native/mock STT flow.
+- `demo/install.html`: JSON Creation payload and generated install QR.
+- `demo/README.md`: local run and deployment instructions.
+
+Run it from this worktree with:
+
+```bash
+python3 -m http.server 4173
+```
+
+Then open `http://localhost:4173/demo/` and `http://localhost:4173/demo/install.html`. Browser validation on 2026-07-17 confirmed an exact 240x282 viewport with no document overflow, semantic focus movement from a `scrollDown` event, navigation from a `sideClick` event, mock transcript review from `longPressStart`/`longPressEnd`, and QR rendering with a versioned `?v=1` application URL. HTTPS and native bridge results remain real-device checks.
+
 ## Risks and Open Questions
 
 - RabbitOS bridge behavior is firmware-dependent and lacks a stable public compatibility guarantee.
@@ -298,4 +315,3 @@ Use browser automation at an exact 240 by 282 viewport. Hardware release gates s
 - Rabbit R1 community examples: <https://github.com/andr3w-hilton/rabbit-r1-creations-public>
 - R1 UI Kit: <https://github.com/Ashosystem/r1-ui-kit>
 - R1 Escape, consulted only to distinguish Creation development from custom firmware: <https://github.com/RabbitHoleEscapeR1/r1_escape>
-
