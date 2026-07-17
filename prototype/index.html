@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Paseo for Rabbit R1 Prototype</title>
+  <style>
+    :root {
+      --canvas: #090a0a;
+      --surface: #111313;
+      --surface-raised: #191c1b;
+      --hairline: #2a2d2b;
+      --hairline-strong: #4a4e49;
+      --text: #f4f2ec;
+      --text-secondary: #b8bbb4;
+      --text-muted: #777c75;
+      --orange: #ff4f18;
+      --orange-pressed: #d83b0b;
+      --running: #f0b429;
+      --idle: #8b918a;
+      --initializing: #65b8ff;
+      --input: #60d394;
+      --error: #ff6257;
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #d9d9d4;
+      color: var(--text);
+    }
+    button, textarea { font: inherit; }
+
+    .device {
+      position: relative;
+      width: 332px;
+      height: 356px;
+      display: grid;
+      place-items: center;
+      border-radius: 24px;
+      background: #f34b18;
+      box-shadow: 0 24px 64px rgba(20, 20, 18, .28), inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .device::after {
+      content: "";
+      position: absolute;
+      right: -11px;
+      top: 92px;
+      width: 12px;
+      height: 76px;
+      border-radius: 0 8px 8px 0;
+      background: #c9340a;
+      box-shadow: inset 2px 0 2px rgba(0,0,0,.2);
+    }
+    .wheel {
+      position: absolute;
+      right: 16px;
+      top: 28px;
+      width: 28px;
+      height: 28px;
+      border: 3px solid #1c1d1c;
+      border-radius: 50%;
+      opacity: .82;
+    }
+    .wheel::before, .wheel::after {
+      content: "";
+      position: absolute;
+      inset: 5px 11px;
+      background: #1c1d1c;
+    }
+    .wheel::after { transform: rotate(90deg); }
+
+    #app {
+      position: relative;
+      width: 240px;
+      height: 282px;
+      overflow: hidden;
+      border: 1px solid #262727;
+      border-radius: 3px;
+      outline: none;
+      background: var(--canvas);
+      box-shadow: inset 0 0 0 1px #000, 0 5px 20px rgba(0,0,0,.22);
+    }
+    .view {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-rows: 3px 36px minmax(0, 1fr) 34px;
+      overflow: hidden;
+      background: var(--canvas);
+    }
+    .view.no-rail { grid-template-rows: 3px 36px minmax(0, 1fr); }
+    .view.has-stale { grid-template-rows: 3px 36px 18px minmax(0, 1fr) 34px; }
+    .view.no-rail.has-stale { grid-template-rows: 3px 36px 18px minmax(0, 1fr); }
+    .view.has-stale > .content { grid-row: 4; }
+    .view.has-stale > .action-rail { grid-row: 5; }
+    .brand-rule { background: var(--orange); }
+
+    .header {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 8px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .header-title {
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      line-height: 16px;
+      font-weight: 700;
+    }
+    .header-meta, .meta, .eyebrow, .section-label, .attention, .action, .status-label, .stale-band {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      letter-spacing: 0;
+    }
+    .header-meta {
+      color: var(--text-muted);
+      font-size: 9px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .header-meta.live::before, .header-meta.stale::before {
+      content: "";
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      margin-right: 4px;
+      border-radius: 50%;
+      background: var(--input);
+      vertical-align: 1px;
+    }
+    .header-meta.stale { color: var(--running); }
+    .header-meta.stale::before { background: var(--running); }
+
+    .content { min-height: 0; overflow: hidden; }
+    .list { height: 100%; }
+    .section-label {
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      border-bottom: 1px solid var(--hairline);
+      color: var(--text-muted);
+      background: var(--surface);
+      font-size: 8px;
+      line-height: 10px;
+      font-weight: 700;
+    }
+
+    .row {
+      position: relative;
+      width: 100%;
+      height: 46px;
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr) auto;
+      grid-template-rows: 18px 14px;
+      align-content: center;
+      column-gap: 5px;
+      padding: 5px 8px;
+      border: 0;
+      border-bottom: 1px solid var(--hairline);
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+    }
+    .row.compact { height: 42px; }
+    .row::before, .action::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: transparent;
+    }
+    .row.selected, .action.selected {
+      background: var(--text);
+      color: var(--canvas);
+    }
+    .row.selected::before, .action.selected::before { background: var(--orange); }
+    .row-title {
+      min-width: 0;
+      align-self: end;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      line-height: 15px;
+      font-weight: 650;
+    }
+    .meta {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-muted);
+      font-size: 9px;
+      line-height: 11px;
+      font-weight: 600;
+    }
+    .row.selected .meta { color: #535752; }
+
+    .dot {
+      grid-row: 1 / span 2;
+      align-self: center;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--idle);
+    }
+    .dot.running { background: var(--running); }
+    .dot.idle { background: var(--idle); }
+    .dot.initializing { background: transparent; border: 2px solid var(--initializing); }
+    .dot.error { border-radius: 0; background: var(--error); transform: rotate(45deg); }
+    .dot.permission { border-radius: 0; background: var(--orange); }
+    .dot.back {
+      width: 8px;
+      height: 8px;
+      border: solid currentColor;
+      border-width: 0 0 2px 2px;
+      border-radius: 0;
+      background: transparent;
+      transform: rotate(45deg);
+    }
+    .attention {
+      grid-row: 1 / span 2;
+      align-self: center;
+      color: var(--orange);
+      font-size: 8px;
+      line-height: 10px;
+      font-weight: 800;
+    }
+    .attention.input { color: var(--input); }
+    .attention.failed { color: var(--error); }
+    .row.selected .attention { color: var(--orange-pressed); }
+
+    .action-rail {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      border-top: 1px solid var(--hairline);
+      background: var(--surface);
+    }
+    .action {
+      position: relative;
+      min-width: 0;
+      border: 0;
+      border-right: 1px solid var(--hairline);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 9px;
+      line-height: 34px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .action:last-child { border-right: 0; }
+    .action.danger.selected { background: var(--error); color: #160605; }
+    .action:disabled { opacity: .38; cursor: not-allowed; }
+
+    .agent-content {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 48px minmax(0, 1fr);
+    }
+    .status-band {
+      display: grid;
+      grid-template-columns: 10px minmax(0,1fr) auto;
+      grid-template-rows: 16px 13px;
+      column-gap: 6px;
+      align-content: center;
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--hairline);
+      background: var(--surface);
+    }
+    .status-band .dot { grid-row: 1 / span 2; }
+    .status-label {
+      align-self: end;
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 750;
+    }
+    .status-attention {
+      align-self: end;
+      color: var(--orange);
+      font: 750 8px/10px ui-monospace, monospace;
+    }
+    .step-count {
+      align-self: end;
+      color: var(--running);
+      font: 750 9px/11px ui-monospace, monospace;
+    }
+    .timeline { height: 100%; overflow: hidden; }
+    .timeline-item {
+      position: relative;
+      min-height: 54px;
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--hairline);
+      cursor: pointer;
+    }
+    .timeline-item.selected { background: var(--surface-raised); }
+    .timeline-item.selected::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--orange);
+    }
+    .eyebrow {
+      margin-bottom: 4px;
+      color: var(--text-muted);
+      font-size: 8px;
+      line-height: 10px;
+      font-weight: 700;
+    }
+    .timeline-text {
+      margin: 0;
+      display: -webkit-box;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 450;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+
+    .decision-body { padding: 9px 8px; overflow: hidden; }
+    .decision-title {
+      margin: 3px 0 7px;
+      font-size: 16px;
+      line-height: 19px;
+      font-weight: 700;
+    }
+    .decision-target {
+      padding: 6px 0;
+      border-top: 1px solid var(--hairline-strong);
+      border-bottom: 1px solid var(--hairline-strong);
+      font: 600 9px/12px ui-monospace, monospace;
+      overflow-wrap: anywhere;
+    }
+    .decision-copy {
+      margin: 7px 0 0;
+      color: var(--text-secondary);
+      font-size: 10px;
+      line-height: 14px;
+    }
+    .context-line {
+      margin-top: 6px;
+      color: var(--text-muted);
+      font: 650 8px/10px ui-monospace, monospace;
+    }
+    .pending {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .pending-mark {
+      width: 26px;
+      height: 26px;
+      border: 2px solid var(--hairline-strong);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 800ms linear infinite;
+    }
+    .pending-title { font: 800 11px/14px ui-monospace, monospace; }
+    .pending-copy { color: var(--text-muted); font: 600 8px/11px ui-monospace, monospace; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .voice {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-rows: 3px 1fr auto auto 1fr;
+      background: var(--canvas);
+    }
+    .voice-bars {
+      align-self: end;
+      justify-self: center;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .voice-bar {
+      width: 4px;
+      height: 18px;
+      border-radius: 2px;
+      background: var(--orange);
+      animation: listen 650ms ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+    .voice-bar:nth-child(2) { animation-delay: -200ms; }
+    .voice-bar:nth-child(3) { animation-delay: -420ms; }
+    .voice-bar:nth-child(4) { animation-delay: -80ms; }
+    .voice-bar:nth-child(5) { animation-delay: -300ms; }
+    @keyframes listen { to { transform: scaleY(2.3); } }
+    .voice-title {
+      margin-top: 17px;
+      text-align: center;
+      font: 800 12px/15px ui-monospace, monospace;
+    }
+    .voice-hint {
+      margin-top: 4px;
+      color: var(--text-muted);
+      text-align: center;
+      font: 650 8px/11px ui-monospace, monospace;
+    }
+
+    .composer { height: 100%; padding: 8px; }
+    .transcript {
+      width: 100%;
+      height: 130px;
+      padding: 8px;
+      resize: none;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 3px;
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 11px;
+      line-height: 15px;
+    }
+    .transcript:focus { border-color: var(--text-secondary); }
+    .composer-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      color: var(--text-muted);
+      font: 650 8px/10px ui-monospace, monospace;
+    }
+    .stale-band {
+      grid-row: 3;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      background: var(--running);
+      color: #17120a;
+      font-size: 8px;
+      font-weight: 800;
+    }
+    .toast {
+      position: absolute;
+      z-index: 20;
+      left: 8px;
+      right: 8px;
+      bottom: 42px;
+      min-height: 28px;
+      display: grid;
+      place-items: center;
+      padding: 5px 8px;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 3px;
+      background: var(--text);
+      color: var(--canvas);
+      font: 750 8px/11px ui-monospace, monospace;
+    }
+
+    @media (max-width: 420px), (max-height: 430px) {
+      body { background: var(--canvas); }
+      .device { width: 240px; height: 282px; border-radius: 0; box-shadow: none; }
+      .device::after, .wheel { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="device" aria-label="Rabbit R1 prototype shell">
+    <div class="wheel" aria-hidden="true"></div>
+    <section id="app" tabindex="0" aria-label="Paseo Rabbit R1 client"></section>
+  </main>
+
+  <script>
+    const workspaces = [
+      {
+        id: "mobile",
+        title: "Mobile app",
+        project: "Paseo",
+        host: "Studio",
+        aggregate: "RUNNING",
+        attention: "1 REVIEW",
+        age: "NOW",
+        agents: [
+          { id: "auth", title: "Release auth fix", provider: "CODEX", lifecycle: "idle", attention: "permission", relation: "ROOT", readOnly: false, permission: { schema: "confirm", complete: true, title: "Run focused mobile tests?", target: "npm run test:mobile -- --focused" } },
+          { id: "tests", title: "Run mobile tests", provider: "CLAUDE", lifecycle: "running", attention: null, relation: "SUBAGENT", readOnly: false },
+          { id: "audit", title: "Review reconnect logs", provider: "CLAUDE", lifecycle: "idle", attention: "finished", relation: "READ ONLY", readOnly: true }
+        ]
+      },
+      {
+        id: "relay",
+        title: "Relay hardening",
+        project: "Paseo",
+        host: "Studio",
+        aggregate: "IDLE",
+        attention: null,
+        age: "18M",
+        agents: [{ id: "relay-agent", title: "Refactor relay", provider: "OPENCODE", lifecycle: "idle", attention: null, relation: "ROOT", readOnly: false }]
+      },
+      {
+        id: "docs",
+        title: "Docs refresh",
+        project: "Paseo docs",
+        host: "Studio",
+        aggregate: "ERROR",
+        attention: "FAILED",
+        age: "1H",
+        agents: [{ id: "docs-agent", title: "Update API docs", provider: "CODEX", lifecycle: "error", attention: "failed", relation: "ROOT", readOnly: false }]
+      }
+    ];
+
+    const state = {
+      view: "home",
+      selected: 0,
+      activeWorkspace: workspaces[0],
+      activeAgent: workspaces[0].agents[0],
+      timelineFocus: 0,
+      connection: "online",
+      voicePhase: null,
+      composerPhase: "review",
+      draft: "Please keep the API backward compatible and run the focused mobile tests before finishing.",
+      stopFailure: false,
+      notice: null,
+      nextVoiceFailure: false,
+      nextSendFailure: false,
+      toast: null,
+      spaceHeld: false,
+      timer: null
+    };
+
+    const app = document.querySelector("#app");
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
+    }
+
+    function dot(kind) {
+      return `<span class="dot ${kind}" aria-hidden="true"></span>`;
+    }
+
+    function header(title, detail = "") {
+      const connectionClass = state.connection === "online" ? "live" : "stale";
+      const connectionLabel = state.connection === "online" ? "LIVE" : state.connection.toUpperCase();
+      return `<header class="header"><div class="header-title">${escapeHtml(title)}</div><div class="header-meta ${connectionClass}">${detail ? `${escapeHtml(detail)} · ` : ""}${connectionLabel}</div></header>`;
+    }
+
+    function rail(actions) {
+      return `<footer class="action-rail" role="toolbar">${actions.map((action, index) => {
+        const selected = index === state.selected;
+        const classes = ["action", selected ? "selected" : "", action.danger ? "danger" : ""].filter(Boolean).join(" ");
+        return `<button class="${classes}" data-rail="${index}" ${action.disabled ? "disabled" : ""}>${action.label}</button>`;
+      }).join("")}</footer>`;
+    }
+
+    function row(item, index) {
+      const selected = index === state.selected;
+      return `<button class="row ${selected ? "selected" : ""}" data-row="${index}" role="option" aria-selected="${selected}">
+        ${dot(item.dot || "idle")}
+        <span class="row-title">${escapeHtml(item.title)}</span>
+        <span class="meta">${escapeHtml(item.meta)}</span>
+        ${item.attention ? `<span class="attention ${item.attentionClass || ""}">${escapeHtml(item.attention)}</span>` : ""}
+      </button>`;
+    }
+
+    function staleBand() {
+      return state.connection === "online" ? "" : '<div class="stale-band"><span>STALE · 4M</span><span>RETRYING 08</span></div>';
+    }
+
+    function viewClasses(base = "view") {
+      return `${base}${state.connection === "online" ? "" : " has-stale"}`;
+    }
+
+    function homeItems() {
+      return [
+        { type: "attention", workspace: workspaces[0], agent: workspaces[0].agents[0], title: "Permission · Release auth fix", meta: "PASEO / MOBILE APP · NOW", dot: "permission", attention: "REVIEW" },
+        ...workspaces.map(workspace => ({
+          type: "workspace",
+          workspace,
+          title: workspace.title,
+          meta: `${workspace.project.toUpperCase()} · ${workspace.aggregate} · ${workspace.age}`,
+          dot: workspace.aggregate === "RUNNING" ? "running" : workspace.aggregate === "ERROR" ? "error" : "idle",
+          attention: workspace.attention,
+          attentionClass: workspace.attention === "FAILED" ? "failed" : ""
+        }))
+      ];
+    }
+
+    function homeView() {
+      const items = homeItems();
+      const visible = items.slice(0, 4);
+      return `<section class="${viewClasses("view no-rail")}" aria-label="Paseo home">
+        <div class="brand-rule"></div>
+        ${header("PASEO", "STUDIO")}
+        <div class="content list" role="listbox" aria-label="Attention and workspaces">
+          <div class="section-label"><span>NEEDS ATTENTION + WORKSPACES</span><span>${state.selected + 1}/${items.length}</span></div>
+          ${visible.map((item, index) => row(item, index)).join("")}
+        </div>
+        ${staleBand()}
+      </section>`;
+    }
+
+    function workspaceItems() {
+      return [
+        { type: "back", title: "Back to Home", meta: `${state.activeWorkspace.project.toUpperCase()} · ${state.activeWorkspace.host.toUpperCase()}`, dot: "back" },
+        ...state.activeWorkspace.agents.map(agent => ({
+          type: "agent", agent, title: agent.title,
+          meta: `${agent.provider} · ${agent.lifecycle.toUpperCase()} · ${agent.relation}`,
+          dot: agent.lifecycle,
+          attention: agent.attention === "permission" ? "REVIEW" : agent.attention === "failed" ? "FAILED" : agent.attention === "finished" ? "FINISHED" : null,
+          attentionClass: agent.attention === "failed" ? "failed" : agent.attention === "finished" ? "input" : ""
+        }))
+      ];
+    }
+
+    function workspaceView() {
+      const items = workspaceItems();
+      return `<section class="${viewClasses("view no-rail")}" aria-label="Workspace agents">
+        <div class="brand-rule"></div>
+        ${header(state.activeWorkspace.title, state.activeWorkspace.aggregate)}
+        <div class="content list" role="listbox" aria-label="Workspace agents">
+          <div class="section-label"><span>${escapeHtml(state.activeWorkspace.project.toUpperCase())}</span><span>${state.selected + 1}/${items.length}</span></div>
+          ${items.slice(0, 4).map((item, index) => row(item, index)).join("")}
+        </div>
+        ${staleBand()}
+      </section>`;
+    }
+
+    function timelineItems() {
+      if (state.activeAgent.id === "auth") return [
+        { type: "assistant", label: "ASSISTANT · NOW", text: "The auth fix is ready. One command needs permission before focused mobile tests can run." },
+        { type: "permission", label: "PERMISSION · FULL", text: "Run npm test:mobile -- --focused in Mobile app." },
+        { type: "tool", label: "TOOL · 2M", text: "Updated the reconnect token flow and verified type checks." }
+      ];
+      if (state.activeAgent.id === "tests") return [
+        { type: "assistant", label: "ASSISTANT · NOW", text: "Pairing and reconnect scenarios passed. Voice dictation remains in progress." },
+        { type: "tool", label: "TOOL · 1M", text: "Running focused Android and iOS mobile flows." },
+        { type: "user", label: "YOU · 3M", text: "Run the focused mobile test suite." }
+      ];
+      return [{ type: "assistant", label: "ASSISTANT", text: "This session is available as a bounded read-only timeline." }];
+    }
+
+    function agentView() {
+      const agent = state.activeAgent;
+      const events = timelineItems();
+      const attentionLabel = agent.attention === "permission" ? "REVIEW" : agent.attention === "failed" ? "FAILED" : agent.attention === "finished" ? "FINISHED" : "";
+      return `<section class="${viewClasses()}" aria-label="Agent timeline">
+        <div class="brand-rule"></div>
+        ${header(agent.title, state.activeWorkspace.title.toUpperCase())}
+        <div class="content agent-content">
+          <div class="status-band">
+            ${dot(agent.lifecycle)}
+            <span class="status-label">${agent.lifecycle.toUpperCase()} · ${agent.relation}</span>
+            <span class="step-count">${agent.lifecycle === "running" ? "2/3" : "3/4"}</span>
+            <span class="meta">${agent.provider} · ${state.activeWorkspace.project.toUpperCase()}</span>
+            <span class="status-attention">${attentionLabel}</span>
+          </div>
+          <div class="timeline" role="listbox" aria-label="Projected timeline">
+            ${events.slice(0, 3).map((event, index) => `<article class="timeline-item ${index === state.timelineFocus ? "selected" : ""}" data-timeline="${index}" role="option" aria-selected="${index === state.timelineFocus}"><div class="eyebrow">${event.label}</div><p class="timeline-text">${escapeHtml(event.text)}</p></article>`).join("")}
+          </div>
+        </div>
+        <footer class="action-rail"><button class="action selected" data-command="actions">ACTIONS</button></footer>
+        ${staleBand()}
+        ${state.notice ? `<div class="toast" role="alert">${escapeHtml(state.notice)}</div>` : ""}
+      </section>`;
+    }
+
+    function actionItems() {
+      const items = [{ type: "back", title: "Back to timeline", meta: `${state.activeWorkspace.title.toUpperCase()} / ${state.activeAgent.provider}`, dot: "back" }];
+      if (state.connection !== "online") {
+        items.push({ type: "unavailable", title: "Actions unavailable", meta: "STALE · RECONNECT TO ACT", dot: "initializing" });
+        return items;
+      }
+      if (!state.activeAgent.readOnly) items.push({ type: "followup", title: "Follow up", meta: "COMPOSER DICTATION OR KEYBOARD", dot: "idle" });
+      if (state.activeAgent.attention === "permission") {
+        const permission = permissionModel();
+        items.push({ type: "permission", title: "Review permission", meta: permission.supported ? `${permission.schema.toUpperCase()} · FULL DETAILS` : "UNSUPPORTED · OPEN PASEO", dot: "permission", attention: "REVIEW" });
+      }
+      if (state.activeAgent.lifecycle === "running" && !state.activeAgent.readOnly) items.push({ type: "stop", title: "Stop current turn", meta: "REQUIRES CONFIRMATION", dot: "error" });
+      return items;
+    }
+
+    function actionsView() {
+      const items = actionItems();
+      return `<section class="view no-rail" aria-label="Agent actions">
+        <div class="brand-rule"></div>
+        ${header("ACTIONS", state.activeAgent.provider)}
+        <div class="content list" role="listbox" aria-label="Agent actions">
+          <div class="section-label"><span>${escapeHtml(state.activeAgent.title.toUpperCase())}</span><span>${state.selected + 1}/${items.length}</span></div>
+          ${items.map((item, index) => row(item, index)).join("")}
+        </div>
+      </section>`;
+    }
+
+    function permissionView() {
+      const permission = permissionModel();
+      if (!permission.supported) {
+        return `<section class="view" aria-label="Unsupported permission">
+          <div class="brand-rule"></div>
+          ${header("PERMISSION", "UNSUPPORTED")}
+          <div class="content decision-body">
+            <div class="eyebrow">PROVIDER QUESTION</div>
+            <h1 class="decision-title">Continue in full Paseo</h1>
+            <p class="decision-copy">This request contains editor input and truncated details. It cannot be answered safely on Rabbit R1.</p>
+            <div class="context-line">STUDIO / PASEO / MOBILE APP</div>
+          </div>
+          ${rail([{ label: "BACK" }, { label: "OPEN PASEO" }])}
+        </section>`;
+      }
+      if (permission.schema === "select") {
+        return `<section class="view" aria-label="Permission selection">
+          <div class="brand-rule"></div>
+          ${header("PERMISSION", "SELECT · FULL")}
+          <div class="content decision-body">
+            <div class="eyebrow">COMMAND SCOPE</div>
+            <h1 class="decision-title">Choose access for this command</h1>
+            <div class="decision-target">${escapeHtml(permission.target)}</div>
+            <p class="decision-copy">Select one complete provider option.</p>
+            <div class="context-line">STUDIO / PASEO / MOBILE APP</div>
+          </div>
+          ${rail([{ label: "BACK" }, ...permission.options.map(label => ({ label: label.toUpperCase() }))])}
+        </section>`;
+      }
+      return `<section class="view" aria-label="Permission decision">
+        <div class="brand-rule"></div>
+        ${header("PERMISSION", "CONFIRM · FULL")}
+        <div class="content decision-body">
+          <div class="eyebrow">RUN COMMAND</div>
+          <h1 class="decision-title">${escapeHtml(permission.title)}</h1>
+          <div class="decision-target">${escapeHtml(permission.target)}</div>
+          <p class="decision-copy">Requested by Release auth fix. No details are truncated.</p>
+          <div class="context-line">STUDIO / PASEO / MOBILE APP</div>
+        </div>
+        ${rail([{ label: "BACK" }, { label: "DENY" }, { label: "APPROVE" }])}
+      </section>`;
+    }
+
+    function permissionModel() {
+      const permission = state.activeAgent.permission;
+      if (!permission || !permission.complete) return { schema: permission?.schema || "unknown", supported: false };
+      if (permission.schema === "confirm") return { ...permission, supported: true };
+      if (permission.schema === "select" && Array.isArray(permission.options) && permission.options.length > 0 && permission.options.length <= 2) return { ...permission, supported: true };
+      return { ...permission, supported: false };
+    }
+
+    function stopView() {
+      if (state.view === "stopping") return pendingView("STOPPING", "WAITING FOR PROVIDER ACKNOWLEDGEMENT");
+      return `<section class="view" aria-label="Stop confirmation">
+        <div class="brand-rule"></div>
+        ${header("STOP TURN", state.activeAgent.provider)}
+        <div class="content decision-body">
+          <div class="eyebrow">DESTRUCTIVE ACTION</div>
+          <h1 class="decision-title">Stop ${escapeHtml(state.activeAgent.title)}?</h1>
+          <p class="decision-copy">The session remains running until the provider acknowledges the interrupt.</p>
+          <div class="context-line">${escapeHtml(state.activeWorkspace.project.toUpperCase())} / ${escapeHtml(state.activeWorkspace.title.toUpperCase())}</div>
+        </div>
+        ${rail([{ label: "BACK" }, { label: "CANCEL" }, { label: "STOP", danger: true }])}
+      </section>`;
+    }
+
+    function composerView() {
+      if (state.composerPhase === "sending") return pendingView("SENDING", "WAITING FOR SERVER ACKNOWLEDGEMENT");
+      return `<section class="view" aria-label="Follow-up composer">
+        <div class="brand-rule"></div>
+        ${header("FOLLOW UP", "DICTATION")}
+        <div class="content composer">
+          <textarea class="transcript" aria-label="Follow-up message">${escapeHtml(state.draft)}</textarea>
+          <div class="composer-meta"><span>${state.composerPhase === "failed" ? "SEND FAILED · DRAFT KEPT" : "REVIEW BEFORE SEND"}</span><span>${state.draft.length}/280</span></div>
+        </div>
+        ${rail([{ label: "BACK" }, { label: "EDIT" }, { label: "SEND" }])}
+      </section>`;
+    }
+
+    function pendingView(title, copy) {
+      return `<section class="view no-rail" aria-label="${title}"><div class="brand-rule"></div>${header(title)}<div class="content pending"><span class="pending-mark" aria-hidden="true"></span><div class="pending-title">${title}</div><div class="pending-copy">${copy}</div></div></section>`;
+    }
+
+    function voiceOverlay() {
+      const transcribing = state.voicePhase === "transcribing";
+      return `<div class="voice" aria-live="assertive"><div class="brand-rule"></div><div class="voice-bars" aria-hidden="true">${Array.from({ length: 5 }, () => '<span class="voice-bar"></span>').join("")}</div><div class="voice-title">${transcribing ? "TRANSCRIBING" : "RECORDING"}</div><div class="voice-hint">${transcribing ? "KEEPING YOUR DRAFT" : "RELEASE TO REVIEW"}</div><div></div></div>`;
+    }
+
+    function render() {
+      const renderers = { home: homeView, workspace: workspaceView, agent: agentView, actions: actionsView, permission: permissionView, stop: stopView, stopping: stopView, composer: composerView };
+      let html = (renderers[state.view] || homeView)();
+      if (state.voicePhase) html += voiceOverlay();
+      if (state.toast) html += `<div class="toast" role="status">${escapeHtml(state.toast)}</div>`;
+      app.innerHTML = html;
+      app.focus({ preventScroll: true });
+      bindEvents();
+    }
+
+    function bindEvents() {
+      app.querySelectorAll("[data-row]").forEach(button => button.addEventListener("click", () => {
+        const index = Number(button.dataset.row);
+        if (state.selected === index) activate(); else { state.selected = index; render(); }
+      }));
+      app.querySelectorAll("[data-timeline]").forEach(item => item.addEventListener("click", () => { state.timelineFocus = Number(item.dataset.timeline); render(); }));
+      app.querySelectorAll("[data-rail]").forEach(button => button.addEventListener("click", () => {
+        const index = Number(button.dataset.rail);
+        if (state.selected === index) activate(); else { state.selected = index; render(); }
+      }));
+      app.querySelector("[data-command='actions']")?.addEventListener("click", openActions);
+      const textarea = app.querySelector(".transcript");
+      if (textarea) textarea.addEventListener("input", event => { state.draft = event.target.value.slice(0, 280); });
+    }
+
+    function currentItems() {
+      if (state.view === "home") return homeItems();
+      if (state.view === "workspace") return workspaceItems();
+      if (state.view === "actions") return actionItems();
+      if (state.view === "permission") {
+        const permission = permissionModel();
+        return permission.supported ? [0, 1, 2] : [0, 1];
+      }
+      if (state.view === "stop" || state.view === "composer") return [0, 1, 2];
+      return [];
+    }
+
+    function move(delta) {
+      if (state.voicePhase || state.view === "stopping" || state.composerPhase === "sending") return;
+      if (state.view === "agent") {
+        const max = timelineItems().length - 1;
+        state.timelineFocus = Math.max(0, Math.min(max, state.timelineFocus + delta));
+      } else {
+        const max = Math.max(0, currentItems().length - 1);
+        state.selected = Math.max(0, Math.min(max, state.selected + delta));
+      }
+      render();
+    }
+
+    function activate() {
+      if (state.view === "agent") { openActions(); return; }
+      if (state.view === "home") {
+        const item = homeItems()[state.selected];
+        state.activeWorkspace = item.workspace;
+        if (item.type === "attention") {
+          state.activeAgent = item.agent;
+          state.view = "agent";
+          state.timelineFocus = 0;
+        } else {
+          state.view = "workspace";
+          state.selected = 0;
+        }
+      } else if (state.view === "workspace") {
+        const item = workspaceItems()[state.selected];
+        if (item.type === "back") return goBack();
+        state.activeAgent = item.agent;
+        state.view = "agent";
+        state.timelineFocus = 0;
+      } else if (state.view === "actions") {
+        const item = actionItems()[state.selected];
+        if (item.type === "back") return goBack();
+        if (item.type === "unavailable") return;
+        if (item.type === "followup") { state.view = "composer"; state.selected = 1; state.composerPhase = "review"; }
+        if (item.type === "permission") { state.view = "permission"; state.selected = 1; }
+        if (item.type === "stop") { state.view = "stop"; state.selected = 1; }
+      } else if (state.view === "permission") {
+        if (state.selected === 0) return goBack();
+        if (state.connection !== "online") return;
+        const permission = permissionModel();
+        if (!permission.supported) return showToast("OPEN ON A FULL PASEO CLIENT", "agent", 1500);
+        if (permission.schema === "select") return showToast(`SELECTED · ${permission.options[state.selected - 1].toUpperCase()}`, "agent");
+        showToast(state.selected === 1 ? "PERMISSION DENIED" : "PERMISSION APPROVED", "agent");
+      } else if (state.view === "stop") {
+        if (state.selected === 0) return goBack();
+        if (state.selected === 1) { state.view = "actions"; state.selected = 0; }
+        if (state.selected === 2 && state.connection === "online") beginStopping();
+      } else if (state.view === "composer") {
+        if (state.selected === 0) return goBack();
+        if (state.selected === 1) app.querySelector(".transcript")?.focus();
+        if (state.selected === 2 && state.connection === "online") beginSending();
+      }
+      render();
+    }
+
+    function openActions() {
+      state.view = "actions";
+      state.selected = 0;
+      render();
+    }
+
+    function goBack() {
+      if (state.voicePhase === "recording") return finishVoice();
+      if (state.view === "workspace") state.view = "home";
+      else if (state.view === "agent") state.view = "workspace";
+      else if (["permission", "stop", "composer"].includes(state.view)) state.view = "actions";
+      else if (state.view === "actions") state.view = "agent";
+      state.selected = 0;
+      render();
+    }
+
+    function startVoice() {
+      if (state.view !== "agent" || state.activeAgent.readOnly || state.connection !== "online") return;
+      state.voicePhase = "recording";
+      render();
+    }
+
+    function finishVoice() {
+      if (state.voicePhase !== "recording") return;
+      state.voicePhase = "transcribing";
+      render();
+      clearTimeout(state.timer);
+      state.timer = setTimeout(() => {
+        state.voicePhase = null;
+        state.view = "composer";
+        state.composerPhase = "review";
+        state.selected = 1;
+        render();
+      }, 650);
+    }
+
+    function beginSending() {
+      if (state.connection !== "online") return;
+      state.composerPhase = "sending";
+      render();
+      clearTimeout(state.timer);
+      state.timer = setTimeout(() => {
+        state.composerPhase = "review";
+        showToast("FOLLOW UP ACCEPTED", "agent");
+      }, 800);
+    }
+
+    function beginStopping() {
+      state.view = "stopping";
+      render();
+      clearTimeout(state.timer);
+      state.timer = setTimeout(() => {
+        if (state.stopFailure) {
+          state.activeAgent.lifecycle = "running";
+          showToast("STOP FAILED · AGENT STILL RUNNING", "agent", 1500);
+        } else {
+          state.activeAgent.lifecycle = "idle";
+          showToast("TURN STOPPED", "agent");
+        }
+      }, 900);
+    }
+
+    function showToast(message, nextView = state.view, duration = 1000) {
+      state.view = nextView;
+      state.toast = message;
+      state.selected = 0;
+      render();
+      clearTimeout(state.timer);
+      state.timer = setTimeout(() => { state.toast = null; render(); }, duration);
+    }
+
+    document.addEventListener("keydown", event => {
+      if (event.target.matches("textarea") && event.key !== "Escape") return;
+      if (event.key === "ArrowUp") { event.preventDefault(); move(-1); }
+      if (event.key === "ArrowDown") { event.preventDefault(); move(1); }
+      if (event.key === "Enter") { event.preventDefault(); activate(); }
+      if (event.key === "Escape" || event.key === "Backspace") { event.preventDefault(); goBack(); }
+      if (event.key.toLowerCase() === "o") { state.connection = state.connection === "online" ? "stale" : "online"; render(); }
+      if (event.key.toLowerCase() === "f") { state.stopFailure = !state.stopFailure; }
+      if (event.code === "Space" && !event.repeat && !state.spaceHeld) {
+        event.preventDefault();
+        state.spaceHeld = true;
+        startVoice();
+      }
+    });
+    document.addEventListener("keyup", event => {
+      if (event.code === "Space" && state.spaceHeld) {
+        event.preventDefault();
+        state.spaceHeld = false;
+        finishVoice();
+      }
+    });
+
+    function applyDemoScreen() {
+      const screen = new URLSearchParams(location.search).get("screen");
+      if (!screen || screen === "home") return;
+      state.activeWorkspace = workspaces[0];
+      state.activeAgent = workspaces[0].agents[0];
+      if (screen === "workspace") { state.view = "workspace"; state.selected = 0; }
+      if (screen === "agent") { state.view = "agent"; state.timelineFocus = 1; }
+      if (screen === "actions") { state.view = "actions"; state.selected = 0; }
+      if (screen === "permission") { state.view = "permission"; state.selected = 1; }
+      if (screen === "unsupported") { state.view = "permission"; state.permissionSupported = false; state.selected = 0; }
+      if (screen === "stop") { state.activeAgent = workspaces[0].agents[1]; state.view = "stop"; state.selected = 1; }
+      if (screen === "composer") { state.view = "composer"; state.selected = 1; }
+      if (screen === "voice") { state.view = "agent"; state.voicePhase = "recording"; }
+      if (screen === "transcribing") { state.view = "agent"; state.voicePhase = "transcribing"; }
+      if (screen === "stale") { state.connection = "stale"; state.view = "home"; state.selected = 0; }
+    }
+
+    applyDemoScreen();
+    render();
+  </script>
+</body>
+</html>
