@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install Paseo Creation Probe</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #090a0a; color: #f4f2ec; font-family: ui-monospace, Menlo, monospace; }
+    main { width: min(100% - 32px, 420px); text-align: center; }
+    h1 { margin: 0 0 8px; font-family: system-ui, sans-serif; font-size: 24px; letter-spacing: 0; }
+    p { margin: 0 0 24px; color: #b2b5ae; font-size: 12px; line-height: 18px; }
+    #qr { width: 260px; min-height: 260px; margin: 0 auto 20px; display: grid; place-items: center; border: 1px solid #2a2d2b; }
+    code { color: #ff4f18; font-size: 10px; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Paseo Creation Probe</h1>
+    <p>Deploy this folder over HTTPS, then scan the generated payload with Rabbit R1.</p>
+    <div id="qr">Loading QR…</div>
+    <code id="url"></code>
+  </main>
+  <script src="https://unpkg.com/qr-code-styling@1.6.0/lib/qr-code-styling.js"></script>
+  <script>
+    const appUrl = new URL("./?v=1", location.href).href;
+    const payload = JSON.stringify({
+      title: "Paseo Probe",
+      url: appUrl,
+      description: "Rabbit R1 Creation bridge and input probe",
+      iconUrl: "",
+      themeColor: "#FF4F18"
+    });
+    document.querySelector("#url").textContent = appUrl;
+    const target = document.querySelector("#qr");
+    if (window.QRCodeStyling) {
+      target.textContent = "";
+      new QRCodeStyling({
+        width: 260,
+        height: 260,
+        data: payload,
+        dotsOptions: { color: "#f4f2ec", type: "square" },
+        backgroundOptions: { color: "#090a0a" },
+        cornersSquareOptions: { color: "#ff4f18", type: "square" },
+        cornersDotOptions: { color: "#ff4f18" }
+      }).append(target);
+    } else {
+      target.textContent = payload;
+    }
+  </script>
+</body>
+</html>
