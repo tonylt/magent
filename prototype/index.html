@@ -545,7 +545,6 @@
       voicePhase: null,
       composerPhase: "review",
       draft: "Please keep the API backward compatible and run the focused mobile tests before finishing.",
-      stopFailure: false,
       notice: null,
       nextVoiceFailure: false,
       nextSendFailure: false,
@@ -707,9 +706,10 @@
 
     function actionsView() {
       const items = actionItems();
-      return `<section class="view no-rail" aria-label="Agent actions">
+      return `<section class="${viewClasses("view no-rail")}" aria-label="Agent actions">
         <div class="brand-rule"></div>
         ${header("ACTIONS", state.activeAgent.provider)}
+        ${staleBand()}
         <div class="content list" role="listbox" aria-label="Agent actions">
           <div class="section-label"><span>${escapeHtml(state.activeAgent.title.toUpperCase())}</span><span>${state.selected + 1}/${items.length}</span></div>
           ${items.map((item, index) => row(item, index)).join("")}
@@ -720,9 +720,10 @@
     function permissionView() {
       const permission = permissionModel();
       if (!permission.supported) {
-        return `<section class="view" aria-label="Unsupported permission">
+        return `<section class="${viewClasses()}" aria-label="Unsupported permission">
           <div class="brand-rule"></div>
           ${header("PERMISSION", "UNSUPPORTED")}
+          ${staleBand()}
           <div class="content decision-body">
             <div class="eyebrow">PROVIDER QUESTION</div>
             <h1 class="decision-title">Continue in full Paseo</h1>
@@ -733,9 +734,10 @@
         </section>`;
       }
       if (permission.schema === "select") {
-        return `<section class="view" aria-label="Permission selection">
+        return `<section class="${viewClasses()}" aria-label="Permission selection">
           <div class="brand-rule"></div>
           ${header("PERMISSION", "SELECT · FULL")}
+          ${staleBand()}
           <div class="content decision-body">
             <div class="eyebrow">COMMAND SCOPE</div>
             <h1 class="decision-title">Choose access for this command</h1>
@@ -743,12 +745,13 @@
             <p class="decision-copy">Select one complete provider option.</p>
             <div class="context-line">STUDIO / PASEO / MOBILE APP</div>
           </div>
-          ${rail([{ label: "BACK" }, ...permission.options.map(label => ({ label: label.toUpperCase() }))])}
+          ${rail([{ label: "BACK" }, ...permission.options.map(label => ({ label: label.toUpperCase(), disabled: state.connection !== "online" }))])}
         </section>`;
       }
-      return `<section class="view" aria-label="Permission decision">
+      return `<section class="${viewClasses()}" aria-label="Permission decision">
         <div class="brand-rule"></div>
         ${header("PERMISSION", "CONFIRM · FULL")}
+        ${staleBand()}
         <div class="content decision-body">
           <div class="eyebrow">RUN COMMAND</div>
           <h1 class="decision-title">${escapeHtml(permission.title)}</h1>
@@ -756,48 +759,61 @@
           <p class="decision-copy">Requested by Release auth fix. No details are truncated.</p>
           <div class="context-line">STUDIO / PASEO / MOBILE APP</div>
         </div>
-        ${rail([{ label: "BACK" }, { label: "DENY" }, { label: "APPROVE" }])}
+        ${rail([{ label: "BACK" }, { label: "DENY", disabled: state.connection !== "online" }, { label: "APPROVE", disabled: state.connection !== "online" }])}
       </section>`;
     }
 
     function permissionModel() {
       const permission = state.activeAgent.permission;
       if (!permission || !permission.complete) return { schema: permission?.schema || "unknown", supported: false };
-      if (permission.schema === "confirm") return { ...permission, supported: true };
-      if (permission.schema === "select" && Array.isArray(permission.options) && permission.options.length > 0 && permission.options.length <= 2) return { ...permission, supported: true };
+      const hasTarget = typeof permission.target === "string" && permission.target.trim().length > 0;
+      const hasTitle = typeof permission.title === "string" && permission.title.trim().length > 0;
+      if (permission.schema === "confirm" && hasTitle && hasTarget) return { ...permission, supported: true };
+      const hasFixedOptions = Array.isArray(permission.options)
+        && permission.options.length > 0
+        && permission.options.length <= 2
+        && permission.options.every(option => typeof option === "string" && option.trim().length > 0);
+      if (permission.schema === "select" && hasTarget && hasFixedOptions) return { ...permission, supported: true };
       return { ...permission, supported: false };
     }
 
     function stopView() {
       if (state.view === "stopping") return pendingView("STOPPING", "WAITING FOR PROVIDER ACKNOWLEDGEMENT");
-      return `<section class="view" aria-label="Stop confirmation">
+      return `<section class="${viewClasses()}" aria-label="Stop confirmation">
         <div class="brand-rule"></div>
         ${header("STOP TURN", state.activeAgent.provider)}
+        ${staleBand()}
         <div class="content decision-body">
           <div class="eyebrow">DESTRUCTIVE ACTION</div>
           <h1 class="decision-title">Stop ${escapeHtml(state.activeAgent.title)}?</h1>
           <p class="decision-copy">The session remains running until the provider acknowledges the interrupt.</p>
           <div class="context-line">${escapeHtml(state.activeWorkspace.project.toUpperCase())} / ${escapeHtml(state.activeWorkspace.title.toUpperCase())}</div>
         </div>
-        ${rail([{ label: "BACK" }, { label: "CANCEL" }, { label: "STOP", danger: true }])}
+        ${rail([{ label: "BACK" }, { label: "CANCEL" }, { label: "STOP", danger: true, disabled: state.connection !== "online" }])}
       </section>`;
     }
 
     function composerView() {
       if (state.composerPhase === "sending") return pendingView("SENDING", "WAITING FOR SERVER ACKNOWLEDGEMENT");
-      return `<section class="view" aria-label="Follow-up composer">
+      const meta = state.composerPhase === "failed"
+        ? "SEND FAILED · DRAFT KEPT"
+        : state.composerPhase === "voice-failed"
+          ? "DICTATION FAILED · DRAFT KEPT"
+          : "REVIEW BEFORE SEND";
+      return `<section class="${viewClasses()}" aria-label="Follow-up composer">
         <div class="brand-rule"></div>
         ${header("FOLLOW UP", "DICTATION")}
+        ${staleBand()}
         <div class="content composer">
           <textarea class="transcript" aria-label="Follow-up message">${escapeHtml(state.draft)}</textarea>
-          <div class="composer-meta"><span>${state.composerPhase === "failed" ? "SEND FAILED · DRAFT KEPT" : "REVIEW BEFORE SEND"}</span><span>${state.draft.length}/280</span></div>
+          <div class="composer-meta"><span>${meta}</span><span>${state.draft.length}/280</span></div>
         </div>
-        ${rail([{ label: "BACK" }, { label: "EDIT" }, { label: "SEND" }])}
+        ${rail([{ label: "BACK" }, { label: "EDIT" }, { label: "SEND", disabled: state.connection !== "online" }])}
       </section>`;
     }
 
     function pendingView(title, copy) {
-      return `<section class="view no-rail" aria-label="${title}"><div class="brand-rule"></div>${header(title)}<div class="content pending"><span class="pending-mark" aria-hidden="true"></span><div class="pending-title">${title}</div><div class="pending-copy">${copy}</div></div></section>`;
+      return `<section class="${viewClasses("view no-rail")}" aria-label="${title}"><div class="brand-rule"></div>${header(title)}${staleBand()}<div class="content pending"><span class="pending-mark" aria-hidden="true"></span><div class="pending-title">${title}</div><div class="pending-copy">${copy}</div></div></section>`;
     }
 
     function voiceOverlay() {
@@ -836,7 +852,8 @@
       if (state.view === "actions") return actionItems();
       if (state.view === "permission") {
         const permission = permissionModel();
-        return permission.supported ? [0, 1, 2] : [0, 1];
+        if (!permission.supported) return [0, 1];
+        return permission.schema === "select" ? [0, ...permission.options.map((_, index) => index + 1)] : [0, 1, 2];
       }
       if (state.view === "stop" || state.view === "composer") return [0, 1, 2];
       return [];
@@ -907,8 +924,9 @@
 
     function goBack() {
       if (state.voicePhase === "recording") return finishVoice();
+      if (state.voicePhase === "transcribing") return;
       if (state.view === "workspace") state.view = "home";
-      else if (state.view === "agent") state.view = "workspace";
+      else if (state.view === "agent") return openActions();
       else if (["permission", "stop", "composer"].includes(state.view)) state.view = "actions";
       else if (state.view === "actions") state.view = "agent";
       state.selected = 0;
@@ -929,8 +947,15 @@
       state.timer = setTimeout(() => {
         state.voicePhase = null;
         state.view = "composer";
-        state.composerPhase = "review";
         state.selected = 1;
+        if (state.nextVoiceFailure) {
+          state.nextVoiceFailure = false;
+          state.composerPhase = "voice-failed";
+          return render();
+        }
+        const transcript = "Also include a reconnect regression test.";
+        state.draft = `${state.draft.trim()}${state.draft.trim() ? " " : ""}${transcript}`.slice(0, 280);
+        state.composerPhase = "review";
         render();
       }, 650);
     }
@@ -941,7 +966,11 @@
       render();
       clearTimeout(state.timer);
       state.timer = setTimeout(() => {
-        state.composerPhase = "review";
+        if (state.nextSendFailure) {
+          state.nextSendFailure = false;
+          state.composerPhase = "failed";
+          return render();
+        }
         showToast("FOLLOW UP ACCEPTED", "agent");
       }, 800);
     }
@@ -949,16 +978,20 @@
     function beginStopping() {
       state.view = "stopping";
       render();
-      clearTimeout(state.timer);
-      state.timer = setTimeout(() => {
-        if (state.stopFailure) {
-          state.activeAgent.lifecycle = "running";
-          showToast("STOP FAILED · AGENT STILL RUNNING", "agent", 1500);
-        } else {
-          state.activeAgent.lifecycle = "idle";
-          showToast("TURN STOPPED", "agent");
-        }
-      }, 900);
+    }
+
+    function resolveStop(succeeded) {
+      if (state.view !== "stopping") return;
+      if (succeeded) {
+        state.activeAgent.lifecycle = "idle";
+        state.notice = null;
+        showToast("TURN STOPPED", "agent");
+      } else {
+        state.activeAgent.lifecycle = "running";
+        state.view = "agent";
+        state.notice = "STOP FAILED · AGENT STILL RUNNING";
+        render();
+      }
     }
 
     function showToast(message, nextView = state.view, duration = 1000) {
@@ -977,7 +1010,10 @@
       if (event.key === "Enter") { event.preventDefault(); activate(); }
       if (event.key === "Escape" || event.key === "Backspace") { event.preventDefault(); goBack(); }
       if (event.key.toLowerCase() === "o") { state.connection = state.connection === "online" ? "stale" : "online"; render(); }
-      if (event.key.toLowerCase() === "f") { state.stopFailure = !state.stopFailure; }
+      if (event.key.toLowerCase() === "a") resolveStop(true);
+      if (event.key.toLowerCase() === "f") resolveStop(false);
+      if (event.key.toLowerCase() === "v") state.nextVoiceFailure = true;
+      if (event.key.toLowerCase() === "s") state.nextSendFailure = true;
       if (event.code === "Space" && !event.repeat && !state.spaceHeld) {
         event.preventDefault();
         state.spaceHeld = true;
@@ -1001,11 +1037,16 @@
       if (screen === "agent") { state.view = "agent"; state.timelineFocus = 1; }
       if (screen === "actions") { state.view = "actions"; state.selected = 0; }
       if (screen === "permission") { state.view = "permission"; state.selected = 1; }
-      if (screen === "unsupported") { state.view = "permission"; state.permissionSupported = false; state.selected = 0; }
+      if (screen === "unsupported") { state.activeAgent.permission = { schema: "editor", complete: false }; state.view = "permission"; state.selected = 0; }
+      if (screen === "select") { state.activeAgent.permission = { schema: "select", complete: true, target: "npm run test:mobile -- --focused", options: ["Run once", "Always allow"] }; state.view = "permission"; state.selected = 1; }
       if (screen === "stop") { state.activeAgent = workspaces[0].agents[1]; state.view = "stop"; state.selected = 1; }
       if (screen === "composer") { state.view = "composer"; state.selected = 1; }
       if (screen === "voice") { state.view = "agent"; state.voicePhase = "recording"; }
       if (screen === "transcribing") { state.view = "agent"; state.voicePhase = "transcribing"; }
+      if (screen === "voice-failed") { state.view = "composer"; state.composerPhase = "voice-failed"; state.selected = 1; }
+      if (screen === "send-failed") { state.view = "composer"; state.composerPhase = "failed"; state.selected = 1; }
+      if (screen === "stopping") { state.activeAgent = workspaces[0].agents[1]; state.view = "stopping"; }
+      if (screen === "stop-failed") { state.activeAgent = workspaces[0].agents[1]; state.view = "agent"; state.notice = "STOP FAILED · AGENT STILL RUNNING"; }
       if (screen === "stale") { state.connection = "stale"; state.view = "home"; state.selected = 0; }
     }
 

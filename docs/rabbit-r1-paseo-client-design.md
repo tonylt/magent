@@ -119,7 +119,7 @@ The interaction rules are consistent across views:
 | Side release | No action | End recording and enter transcribing | No action |
 | Touch | Select or open | Open activity or Actions | Edit, select, confirm, or cancel |
 
-Every non-root view provides a wheel-focusable **Back** semantic item. Touch back and any later verified RabbitOS back event map to the same command; neither is the only return path.
+Workspace, Actions, Composer, and Decision/list views provide a wheel-focusable **Back** semantic item or command. Agent reserves wheel focus for timeline items; its hardware return path is side click, then Actions, then Back. Touch back and any later verified RabbitOS back event map to the same return commands; neither is the only return path.
 
 ### 5.2 Home And Workspace
 
@@ -164,16 +164,18 @@ Voice input never sends automatically after transcription. Review-before-send pr
 
 This is composer dictation, not Paseo Voice mode. New dictation appends to an existing draft by default; replacement is explicit and cancelable.
 
+If transcription fails, Composer enters `voice-failed` with any pre-existing draft unchanged. Retrying dictation appends content only after transcription succeeds.
+
 ### 5.5 Approval Requests
 
 Only complete permission schemas that can be represented unambiguously on the small display are actionable. The client shows:
 
 - Requested operation
 - Short reason or affected target
-- Schema-appropriate confirm or small fixed select options
+- Schema-appropriate confirm or a complete fixed select containing one or two string options
 - Detail completeness and workspace context
 
-The MVP supports only untruncated simple confirms and small fixed selects. Text, editor, multi-step questions, optional comments, and schemas that distinguish skip from cancel remain read-only and direct the user to a full Paseo client. Unknown or truncated requests never expose Approve. The server must never convert an unsupported permission into a generic yes/no prompt.
+The MVP supports only untruncated simple confirms and complete fixed selects containing one or two string options. Text, editor, multi-step questions, optional comments, and schemas that distinguish skip from cancel remain read-only and direct the user to a full Paseo client. Unknown, malformed, or truncated requests default to unsupported and never expose Approve. The server must never convert an unsupported permission into a generic yes/no prompt.
 
 Stop uses a dedicated confirmation with Cancel selected by default. It shows `stopping` until the provider acknowledges the interrupt or emits a terminal turn event. Rejection or timeout returns to running and explains the failure.
 
@@ -353,7 +355,7 @@ Browser simulation is useful but not sufficient. The release gate requires a rea
 - Use only the wheel and side button to move from Home through project/workspace into root agents, subagents, and provider children
 - Follow a long-running Codex or Claude Code task for ten minutes
 - Send voice and edited text follow-ups
-- Verify simple confirm, small fixed select, unsupported/truncated permission, and successful/rejected/timed-out Stop
+- Verify simple confirm, complete one- or two-option fixed select, unsupported/truncated permission, and successful/rejected/timed-out Stop
 - Disable Wi-Fi during streaming, restore it, and confirm cursor-based recovery
 - Restart the Paseo daemon and confirm state recovery
 - Suspend and wake the R1 repeatedly
@@ -431,10 +433,10 @@ The following decisions must be resolved during Phase 0:
 1. Can the current Paseo WebSocket and binary framing run reliably in the RabbitOS WebView?
 2. Can existing Paseo pairing issue a sufficiently scoped browser credential?
 3. Should the first gateway be built into Paseo or deployed as a companion service?
-4. Which permission schemas are both common and complete enough for 240×282? The initial ceiling is simple confirm and small fixed select.
+4. Which permission schemas are both common and complete enough for 240×282? The initial ceiling is simple confirm and a complete fixed select containing one or two string options.
 5. Does the target RabbitOS firmware provide secure Creation storage and native speech-to-text with the community-observed contract?
 6. Is the Paseo relay usable directly from a hosted Creation, including origin and TLS requirements?
-7. Does RabbitOS expose a reliable back event; if not, is a focusable Back item efficient enough on hardware?
+7. Does RabbitOS expose a reliable back event; if not, are focusable Back items in list/decision views plus Agent → Actions → Back efficient enough on hardware?
 
 These are implementation inputs, not reasons to expand the MVP. Until answered, the conservative defaults are a companion gateway, read-only activity projection, and no device-side permission support.
 

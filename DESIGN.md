@@ -184,6 +184,7 @@ radius:
 - Replaces the full viewport; it is not a modal card.
 - Black canvas, orange top rule, centered live level bars, `LISTENING` state, and release instruction.
 - Release enters an explicit `TRANSCRIBING` state before Composer review.
+- A transcription error returns to Composer as `voice-failed` without changing the existing draft. A successful retry appends its transcript.
 - Recording animation uses at most five bars and `transform`; respect reduced motion.
 
 ### Approval View
@@ -193,7 +194,7 @@ radius:
 - `DENY` is selected by default.
 - Approve requires side click after moving selection; no long-press shortcut.
 - Truncated or unsupported details disable approval and show `OPEN PASEO`.
-- Simple confirm and small fixed select are the only actionable MVP schemas. Input, editor, multi-step, optional-comment, skip/cancel-sensitive, and unknown schemas are read-only.
+- Simple confirm and complete fixed selects containing one or two string options are the only actionable MVP schemas. Input, editor, multi-step, optional-comment, skip/cancel-sensitive, malformed, and unknown schemas are read-only.
 
 ### Stop Confirmation
 
@@ -235,7 +236,7 @@ radius:
 - Release ends PTT.
 - Side click during Composer sends only when `SEND` is selected.
 - Side click during Approval applies only the selected decision.
-- Every non-root screen has a wheel-focusable Back item or Back command; touch is not the only return path.
+- Workspace, Actions, Composer, and Decision/list screens expose a wheel-focusable Back item or command. Agent reserves wheel focus for timeline items; its hardware return path is side click, then Actions, then Back. Touch is not the only return path.
 
 ### Touch
 
@@ -299,4 +300,4 @@ radius:
 
 When building Paseo for Rabbit R1:
 
-> Build a fixed 240x282 dark pocket task instrument. Start with attention items and project/workspace ownership, then show root agents and subagents. Keep connection, lifecycle, and attention as separate states. The wheel moves one semantic item; in Agent it browses timeline only, side click opens Actions, and side hold starts dictation for that agent. Every deeper screen has a focusable Back command. Use near-black full-width surfaces, warm off-white text, Rabbit orange only for identity and physical action, dense unframed rows, no nested cards, no gradients, and no raw terminal output. Stop and permission decisions use separate confirmation screens with safe defaults.
+> Build a fixed 240x282 dark pocket task instrument. Start with attention items and project/workspace ownership, then show root agents and subagents. Keep connection, lifecycle, and attention as separate states. The wheel moves one semantic item; in Agent it browses timeline only, side click opens Actions, and side hold starts dictation for that agent. Workspace, Actions, Composer, and Decision/list screens have a focusable Back command; Agent returns through Actions. Use near-black full-width surfaces, warm off-white text, Rabbit orange only for identity and physical action, dense unframed rows, no nested cards, no gradients, and no raw terminal output. Stop and permission decisions use separate confirmation screens with safe defaults.

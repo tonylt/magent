@@ -56,7 +56,7 @@ Global states:
   Unsupported orientation
 ```
 
-MVP 不设置 tab bar、drawer 或全局菜单。Home 是唯一根视图；所有下一层视图都提供可被滚轮聚焦的 Back 语义项。MVP 绑定一个 host；多 host 支持进入范围时，Home 必须显式标记 host，不能合并同名 project/workspace。
+MVP 不设置 tab bar、drawer 或全局菜单。Home 是唯一根视图；Workspace、Actions、Composer 和 Decision/list 视图直接提供可被滚轮聚焦的 Back 项或命令。Agent 的滚轮焦点仅用于 timeline，其纯硬件返回路径是侧键短按进入 Actions，再选择 Back。MVP 绑定一个 host；多 host 支持进入范围时，Home 必须显式标记 host，不能合并同名 project/workspace。
 
 ## 4. 核心视图
 
@@ -119,7 +119,7 @@ Actions 是全屏语义列表，首项为 Back，其余按上下文显示 Follow
 - 字符数与发送状态。
 - Action rail：`CANCEL`、`EDIT`、`SEND`。
 
-`SEND` 不能默认选中；dictation 进入 Composer 时默认选中 `EDIT`。已有草稿时新 transcript 默认追加；Replace 是显式且可取消的操作。发送后经历 `sending -> accepted | failed`，失败时保留草稿。
+`SEND` 不能默认选中；dictation 进入 Composer 时默认选中 `EDIT`。已有草稿时新 transcript 默认追加；Replace 是显式且可取消的操作。发送后经历 `sending -> accepted | failed`，失败时保留草稿。转写失败进入 `voice-failed`，已有草稿保持不变；只有转写成功后才追加新 transcript。
 
 ### 4.6 Dictation
 
@@ -145,7 +145,7 @@ Dictation 仅从明确打开的 interactive Agent 启动。它替换整屏，不
 6. Workspace / agent context。
 7. Action rail 或 select options。
 
-简单 confirm 默认 focus 是 `DENY`。少量固定 select 直接展示选项。Text/editor/multi-step/optional-comment、区分 skip/cancel、未知或截断 schema 不显示 Approve，action rail 只有 `BACK`、`OPEN PASEO`。
+简单 confirm 默认 focus 是 `DENY`。完整且仅含 1–2 个字符串固定选项的 select 直接展示选项。Text/editor/multi-step/optional-comment、区分 skip/cancel、未知、畸形或截断 schema 默认不支持，不显示 Approve，action rail 只有 `BACK`、`OPEN PASEO`。
 
 ### 4.8 Stop Confirmation
 
@@ -192,7 +192,7 @@ Stop
 - Touch 与 wheel 写入同一个 canonical focus。
 - Async update 不改变 focus，除非当前项目已被服务端删除。
 - 每次 destructive action 都必须经过单独确认视图或明确 decision focus。
-- 每个非根视图都必须有可聚焦 Back；触摸不是唯一返回方式。
+- Workspace、Actions、Composer 和 Decision/list 视图直接提供可聚焦 Back；Agent 通过侧键短按进入 Actions，再选择 Back。触摸不是唯一返回方式。
 
 ## 6. 关键用户流程
 
@@ -276,7 +276,7 @@ Online -> network loss -> STALE snapshot -> reconnect -> cursor replay -> LIVE
 
 ### 交互验收
 
-- Arrow Up/Down、Enter、Space hold/release 和 Escape 可模拟全部核心流程；同时每个非根视图都能通过 wheel + Enter 返回。
+- Arrow Up/Down、Enter、Space hold/release 和 Escape 可模拟全部核心流程；列表/决策视图可通过 wheel + Enter 直接返回，Agent 通过 Enter 打开 Actions，再选择 Back 返回。
 - Wheel 一格移动一个语义项，边界不循环。
 - Touch 和 wheel focus 始终一致。
 - Voice transcript 不自动发送。

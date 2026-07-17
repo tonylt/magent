@@ -119,7 +119,7 @@ R1 客户端应与 Paseo 共享领域 contract 和语义，但拥有自己的展
 | 松开侧键 | 无操作 | 结束录音并进入 transcribing | 无操作 |
 | 触摸 | 选择或打开 | 打开 activity 或 Actions | 编辑、选择、确认或取消 |
 
-每个非根视图都必须提供可被滚轮选中的 **Back** 语义项。触摸 back 和未来可能验证通过的 RabbitOS back event 只映射到同一 command，不是唯一返回方式。
+Workspace、Actions、Composer 和 Decision/list 视图直接提供可被滚轮聚焦的 **Back** 项或命令。Agent 的滚轮焦点仅用于 timeline；其纯硬件返回路径是侧键短按进入 Actions，再选择 Back。触摸返回和经验证的 RabbitOS back event 映射到同一返回命令，不是唯一返回方式。
 
 ### 5.2 Home 与 Workspace
 
@@ -177,16 +177,18 @@ MVP 默认绑定单个 host。若未来支持多 host，Home 必须在 project �
 
 这里的能力是 composer dictation，不是 Paseo 的完整 Voice mode。Composer 已有内容时，新的 dictation 默认追加；替换必须作为显式操作，并可取消。
 
+转写失败时 Composer 进入 `voice-failed`，已有草稿保持不变；只有转写成功后才把新 transcript 追加到草稿。
+
 ### 5.5 Permission 请求
 
 只有能在小屏上完整且无歧义呈现的 permission schema 才允许操作。客户端显示：
 
 - 请求执行的操作
 - 简短原因或影响目标
-- 与 schema 对应的 confirm 或少量 select 选项
+- 与 schema 对应的 confirm，或完整且仅含 1–2 个字符串固定选项的 select
 - 详情完整性和 workspace 上下文
 
-MVP 只支持未截断的简单 confirm，以及不需要搜索的少量固定选项 select。Text、editor、multi-step question、optional comment，以及必须区分 skip/cancel 的 schema 都只读展示并引导用户使用完整 Paseo 客户端。未知、截断或详情复杂的审批不得显示可用的 Approve。服务端绝不能把不支持的 permission 转换成泛化的 yes/no 问题。
+MVP 只支持未截断的简单 confirm，以及完整且仅含 1–2 个字符串固定选项的 select。Text、editor、multi-step question、optional comment，以及必须区分 skip/cancel 的 schema 都只读展示并引导用户使用完整 Paseo 客户端。未知、畸形、截断或详情复杂的审批默认不支持，且不得显示可用的 Approve。服务端绝不能把不支持的 permission 转换成泛化的 yes/no 问题。
 
 Stop 使用单独确认页，默认选择 Cancel。提交后显示 `stopping`，只有 provider 确认 interrupt 或发送 terminal turn event 后才显示 stopped；失败或超时必须恢复 running，并解释失败。
 
@@ -366,7 +368,7 @@ Browser simulation 有用，但不足以作为发布依据；release gate 必须
 - 只用滚轮和侧键，从 Home 进入 project/workspace，并浏览 root agent、subagent 和 provider child
 - 持续跟踪一个运行十分钟的 Codex 或 Claude Code 任务
 - 发送语音 follow-up 和编辑后的文字 follow-up
-- 验证 simple confirm、small fixed select、unsupported/truncated permission，以及 Stop 成功、拒绝和超时
+- 验证 simple confirm、完整且仅含 1–2 个固定选项的 select、unsupported/truncated permission，以及 Stop 成功、拒绝和超时
 - Streaming 时关闭 Wi-Fi，恢复后确认 cursor-based recovery
 - 重启 Paseo daemon 并确认状态恢复
 - 多次 suspend 和唤醒 R1
@@ -444,10 +446,10 @@ MVP 验收目标：
 1. 现有 Paseo WebSocket 和 binary framing 能否在 RabbitOS WebView 中稳定运行？
 2. 现有 Paseo pairing 能否签发权限足够窄的 browser credential？
 3. 首个 gateway 应内置 Paseo，还是作为 companion service 部署？
-4. 哪些 permission schema 既常见，又能在 240×282 上完整且安全地展示？初始上限是 simple confirm 与 small fixed select。
+4. 哪些 permission schema 既常见，又能在 240×282 上完整且安全地展示？初始上限是 simple confirm，以及完整且仅含 1–2 个字符串固定选项的 select。
 5. 目标 RabbitOS firmware 是否以社区观察到的 contract 提供 secure Creation storage 和原生语音转写？
 6. 托管 Creation 能否直接使用 Paseo relay，包括 origin 和 TLS 要求？
-7. RabbitOS 是否提供可靠 back event；若没有，可聚焦 Back item 是否满足真实设备操作效率？
+7. RabbitOS 是否提供可靠 back event；若没有，列表/决策视图中的可聚焦 Back，加上 Agent → Actions → Back，是否满足真实设备操作效率？
 
 这些问题是实现输入，不是扩大 MVP 的理由。在得到答案前，保守默认值是 companion gateway、只读 activity projection，以及不支持设备端 permission。
 

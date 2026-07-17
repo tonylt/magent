@@ -21,6 +21,9 @@ Open `prototype/index.html` directly in a browser. The app viewport remains fixe
 - Hold / release Space: dictation from an open Agent
 - Escape / Backspace: browser-only back fallback
 - `O`: toggle live/stale connection state
-- `F`: toggle Stop acknowledgement success/failure for the next simulated Stop
+- `A`: acknowledge a pending Stop
+- `F`: reject or fail a pending Stop
+- `V`: make the next dictation fail
+- `S`: make the next send fail
 
-Review individual states with `?screen=home|workspace|agent|actions|permission|unsupported|stop|composer|voice|transcribing|stale`.
+Review individual states with `?screen=home|workspace|agent|actions|permission|select|unsupported|stop|stopping|stop-failed|composer|voice|transcribing|voice-failed|send-failed|stale`.
