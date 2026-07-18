@@ -148,3 +148,19 @@ test("reports unsupported voice without throwing", () => {
   assert.deepEqual(adapter.startSpeech("request-1"), { ok: false, error: "unsupported" });
   adapter.dispose();
 });
+
+test("forwards touch details through the default controller path", () => {
+  const { host, document } = setup();
+  const received = [];
+  const adapter = createRabbitBridgeAdapter({
+    host,
+    document,
+    controller: {
+      handle: (type, source, details) => received.push({ type, source, details }),
+      interrupt: () => {},
+    },
+  });
+  adapter.sendInput("focus-at", "touch", { focus: 2 });
+  assert.deepEqual(received, [{ type: "focus-at", source: "touch", details: { focus: 2 } }]);
+  adapter.dispose();
+});

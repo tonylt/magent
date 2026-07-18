@@ -32,7 +32,7 @@ export function createRabbitBridgeAdapter({
 
   const dispatchInput = typeof onInput === "function"
     ? onInput
-    : (type, source) => controller?.handle(type, source);
+    : (type, source, details) => controller?.handle(type, source, details);
   if (typeof onInput !== "function" && typeof controller?.handle !== "function") {
     throw new TypeError("onInput or controller.handle is required");
   }

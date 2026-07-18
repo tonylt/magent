@@ -51,6 +51,10 @@ test("home is fixed, bounded, and responds to semantic wheel input", async ({ pa
   await expect(page).toHaveScreenshot("home.png");
   await page.evaluate(() => dispatchEvent(new Event("scrollDown")));
   await expect(page.locator('[aria-current="true"] .row-title')).toContainText("Bridge diagnostics");
+  await page.locator(".row").nth(2).dispatchEvent("pointerup");
+  await expect(page.locator('[aria-current="true"] .row-title')).toContainText("Transport check");
+  await page.locator(".row").nth(2).dispatchEvent("pointerup");
+  await expect(page.locator("#app")).toHaveAttribute("data-view", "transport");
 });
 
 test("diagnostics screen is deterministic and bounded", async ({ page }) => {
