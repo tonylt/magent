@@ -82,6 +82,24 @@ test("ends capture at the recording limit and safely interrupts on lifecycle los
   assert.equal(second.clock.pendingTimers(), 0);
 });
 
+test("keeps a capped hold consumed until release and suppresses its trailing click", () => {
+  const { clock, controller, emitted, ignored } = setup();
+  controller.handle("hold-start", "rabbit");
+  clock.advance(30_000);
+  clock.advance(2_000);
+  controller.handle("select", "rabbit");
+  controller.handle("hold-end", "rabbit");
+  controller.handle("select", "rabbit");
+  controller.handle("select", "rabbit");
+
+  assert.deepEqual(emitted.map((event) => event.type), ["hold-start", "hold-limit", "select"]);
+  assert.deepEqual(ignored.map((event) => event.reason), [
+    "hold-consumed",
+    "capped-hold-end",
+    "trailing-click",
+  ]);
+});
+
 test("expires trailing-click suppression without swallowing a later deliberate click", () => {
   const { clock, controller, emitted } = setup();
   controller.handle("hold-start", "rabbit");

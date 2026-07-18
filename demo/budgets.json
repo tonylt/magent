@@ -1,0 +1,20 @@
+{
+  "kind": "s01-browser-baseline",
+  "assets": {
+    "entry": "demo/index.html",
+    "totalBytes": 131072,
+    "javascriptBytes": 65536,
+    "cssBytes": 49152,
+    "singleAssetBytes": 65536,
+    "remoteRuntimeDependencies": 0
+  },
+  "dom": {
+    "steadyNodes": 120,
+    "transientNodes": 160
+  },
+  "diagnostics": {
+    "entries": 64,
+    "serializedBytes": 16384
+  }
+}
+

@@ -7,7 +7,7 @@
     "test": "node --test tests/unit/*.test.js",
     "test:browser": "playwright test",
     "test:browser:update": "playwright test --update-snapshots",
-    "verify:budgets": "node scripts/verify-budgets.mjs",
+    "verify:budgets": "node scripts/verify-budgets.mjs && playwright test -g budgets",
     "verify": "npm test && npm run verify:budgets && npm run test:browser"
   },
   "devDependencies": {
