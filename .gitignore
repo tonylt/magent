@@ -4,3 +4,4 @@ node_modules/
 artifacts/test-results/
 artifacts/production-metafile.json
 dist/
+certs/
