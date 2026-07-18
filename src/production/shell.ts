@@ -1,23 +1,36 @@
 import { evaluateCapabilities } from "./capability-gate.ts";
 import { createBoundedDiagnostics } from "./diagnostics.ts";
+import { negotiate } from "./negotiation.ts";
 import type {
   CapabilitySnapshot,
+  GateDecision,
   PlatformAdapter,
   PlatformEvent,
   ProductionShell,
   ProductionDiagnostics,
+  RelayCompatibilitySource,
   ShellState,
   ShellViewModel,
   SemanticCommand,
 } from "./contracts.ts";
+import type { CompatibilityReport } from "./relay/relay-client.ts";
+
+const UNREACHABLE_RELAY: CompatibilityReport = {
+  compatibility: "unsupported",
+  stage: "hello",
+  failure: "TRANSPORT CLOSED",
+  framesValidated: 0,
+};
 
 export function createProductionShell({
   adapter,
   render,
+  relaySource,
   diagnostics = createBoundedDiagnostics(),
 }: {
   adapter: PlatformAdapter;
   render: (viewModel: ShellViewModel) => void;
+  relaySource?: RelayCompatibilitySource;
   diagnostics?: ProductionDiagnostics;
 }): ProductionShell {
   let current: ShellState = {
@@ -29,8 +42,10 @@ export function createProductionShell({
   };
   let started = false;
   let disposed = false;
+  let negotiating = false;
   let unsubscribe: (() => void) | null = null;
   let currentViewModel: ShellViewModel | null = null;
+  let lastDeviceDecision: GateDecision | null = null;
 
   function emit(viewModel: ShellViewModel): void {
     currentViewModel = viewModel;
@@ -51,16 +66,9 @@ export function createProductionShell({
     if (event.type === "command") dispatch(event.command);
   }
 
-  function renderDecision(snapshot: CapabilitySnapshot): void {
-    const decision = evaluateCapabilities(snapshot);
-    diagnostics.record("capability-decision", decision.compatibility);
-    updateState({
-      status: decision.compatibility === "supported" ? "ready" : decision.compatibility,
-      lifecycle: snapshot.lifecycle,
-      capabilitiesChecked: true,
-    });
-
+  function renderDeviceOnly(decision: GateDecision): void {
     if (decision.compatibility === "supported") {
+      updateState({ status: "ready", focus: 0 });
       emit({
         screen: "ready",
         title: "PASEO R1",
@@ -70,29 +78,86 @@ export function createProductionShell({
           { title: "DEVICE CAPABILITIES", detail: "CHECKED BEFORE DATA" },
           { title: "RELAY NOT CONFIGURED", detail: "S04 REQUIRED" },
         ],
-        focus: current.focus,
+        focus: 0,
       });
       return;
     }
+    updateState({ status: "limited", focus: 0 });
+    emit({ screen: "limited", title: "LIMITED", status: "READ ONLY", reasons: decision.reasons, focus: 0 });
+  }
 
-    if (decision.compatibility === "limited") {
+  function renderNegotiated(decision: GateDecision, report: CompatibilityReport): void {
+    const outcome = negotiate(decision, report);
+    diagnostics.record("relay-negotiation", outcome.compatibility);
+
+    if (outcome.compatibility === "supported") {
+      updateState({ status: "ready", focus: 0 });
       emit({
-        screen: "limited",
-        title: "LIMITED",
-        status: "READ ONLY",
-        reasons: decision.reasons,
-        focus: current.focus,
+        screen: "ready",
+        title: "PASEO R1",
+        status: "RELAY COMPATIBLE",
+        reasons: [],
+        items: [
+          { title: "DEVICE CAPABILITIES", detail: "CHECKED BEFORE DATA" },
+          { title: "RELAY COMPATIBLE", detail: "S05 REQUIRED" },
+        ],
+        focus: 0,
       });
       return;
     }
-
+    if (outcome.compatibility === "limited") {
+      updateState({ status: "limited", focus: 0 });
+      emit({ screen: "limited", title: "LIMITED", status: "READ ONLY", reasons: outcome.reasons, focus: 0 });
+      return;
+    }
+    // upgrade-required or relay-origin unsupported: recoverable recovery screen.
+    updateState({ status: outcome.compatibility, focus: 0 });
     emit({
-      screen: "unsupported",
-      title: "UNSUPPORTED",
+      screen: "recover",
+      title: outcome.compatibility === "upgrade-required" ? "UPGRADE REQUIRED" : "UNSUPPORTED",
       status: "NO DATA",
-      reasons: decision.reasons,
-      focus: current.focus,
+      reasons: outcome.reasons,
+      recoverable: outcome.recoverable,
+      focus: 0,
     });
+  }
+
+  async function negotiateRelay(decision: GateDecision, source: RelayCompatibilitySource): Promise<void> {
+    if (negotiating) return;
+    negotiating = true;
+    updateState({ status: "negotiating", focus: 0 });
+    diagnostics.record("relay-negotiation", "negotiating");
+    emit({ screen: "checking-relay", title: "CHECKING RELAY", status: "NO DATA", reasons: [], focus: 0 });
+
+    let report: CompatibilityReport;
+    try {
+      report = await source();
+    } catch {
+      report = UNREACHABLE_RELAY;
+    }
+    negotiating = false;
+    if (disposed) return;
+    renderNegotiated(decision, report);
+  }
+
+  function renderDecision(snapshot: CapabilitySnapshot): void {
+    const decision = evaluateCapabilities(snapshot);
+    lastDeviceDecision = decision;
+    diagnostics.record("capability-decision", decision.compatibility);
+    updateState({ lifecycle: snapshot.lifecycle, capabilitiesChecked: true });
+
+    // Device hardware gate is terminal and never contacts the relay.
+    if (decision.compatibility === "unsupported") {
+      updateState({ status: "unsupported", focus: 0 });
+      emit({ screen: "unsupported", title: "UNSUPPORTED", status: "NO DATA", reasons: decision.reasons, focus: 0 });
+      return;
+    }
+
+    if (!relaySource) {
+      renderDeviceOnly(decision);
+      return;
+    }
+    void negotiateRelay(decision, relaySource);
   }
 
   async function start(): Promise<void> {
@@ -100,13 +165,7 @@ export function createProductionShell({
     started = true;
     diagnostics.record("capability-probe", "started");
     updateState({ status: "probing" });
-    emit({
-      screen: "checking",
-      title: "CHECKING DEVICE",
-      status: "NO DATA",
-      reasons: [],
-      focus: 0,
-    });
+    emit({ screen: "checking", title: "CHECKING DEVICE", status: "NO DATA", reasons: [], focus: 0 });
     unsubscribe = adapter.subscribe(handlePlatformEvent);
     let snapshot: CapabilitySnapshot;
     try {
@@ -139,6 +198,18 @@ export function createProductionShell({
       diagnostics.record("command-rejected", "background");
       return "background";
     }
+
+    // Recoverable recovery screen: side click retries the relay negotiation.
+    if (currentViewModel?.screen === "recover") {
+      if (currentViewModel.recoverable && command.type === "activate" && lastDeviceDecision && relaySource) {
+        diagnostics.record("relay-negotiation", "retry");
+        void negotiateRelay(lastDeviceDecision, relaySource);
+        return "accepted";
+      }
+      diagnostics.record("command-rejected", "not-ready");
+      return "not-ready";
+    }
+
     if (current.status !== "ready" || currentViewModel?.screen !== "ready") {
       diagnostics.record("command-rejected", "not-ready");
       return "not-ready";
@@ -148,10 +219,11 @@ export function createProductionShell({
       return "not-ready";
     }
 
+    const maxFocus = Math.max(0, currentViewModel.items.length - 1);
     let focus = current.focus;
     if (command.type === "previous") focus = Math.max(0, focus - 1);
-    else if (command.type === "next") focus = Math.min(1, focus + 1);
-    else if (command.type === "focus-at") focus = Math.max(0, Math.min(1, Math.trunc(command.index)));
+    else if (command.type === "next") focus = Math.min(maxFocus, focus + 1);
+    else if (command.type === "focus-at") focus = Math.max(0, Math.min(maxFocus, Math.trunc(command.index)));
 
     updateState({ focus });
     emit({ ...currentViewModel, focus });

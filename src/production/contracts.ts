@@ -1,6 +1,15 @@
+import type { CompatibilityReport } from "./relay/relay-client.ts";
+
 export type Support = "available" | "missing" | "unknown";
 export type PlatformKind = "browser" | "rabbit";
 export type LifecycleState = "foreground" | "background";
+
+/**
+ * Produces a relay compatibility report for boot-time negotiation. In production
+ * (S05) this drives a real WSS/E2EE transport; in tests and fixtures it replays the
+ * S04 scripted transport. A factory so a recoverable screen can retry it.
+ */
+export type RelayCompatibilitySource = () => Promise<CompatibilityReport>;
 
 export interface CapabilitySnapshot {
   readonly platform: PlatformKind;
@@ -111,21 +120,33 @@ export type ShellViewModel =
       focus: 0;
     }>
   | Readonly<{
+      screen: "checking-relay";
+      title: "CHECKING RELAY";
+      status: "NO DATA";
+      reasons: readonly [];
+      focus: 0;
+    }>
+  | Readonly<{
       screen: "ready";
       title: "PASEO R1";
-      status: "READY FOR RELAY";
+      status: "READY FOR RELAY" | "RELAY COMPATIBLE";
       reasons: readonly [];
-      items: readonly [
-        Readonly<{ title: "DEVICE CAPABILITIES"; detail: "CHECKED BEFORE DATA" }>,
-        Readonly<{ title: "RELAY NOT CONFIGURED"; detail: "S04 REQUIRED" }>,
-      ];
+      items: readonly Readonly<{ title: string; detail: string }>[];
       focus: number;
     }>
   | Readonly<{
       screen: "limited";
       title: "LIMITED";
       status: "READ ONLY";
-      reasons: readonly GateReason[];
+      reasons: readonly string[];
+      focus: number;
+    }>
+  | Readonly<{
+      screen: "recover";
+      title: "UPGRADE REQUIRED" | "UNSUPPORTED";
+      status: "NO DATA";
+      reasons: readonly string[];
+      recoverable: boolean;
       focus: number;
     }>
   | Readonly<{
@@ -137,7 +158,7 @@ export type ShellViewModel =
     }>;
 
 export interface ShellState {
-  readonly status: "idle" | "probing" | "ready" | "limited" | "unsupported" | "disposed";
+  readonly status: "idle" | "probing" | "negotiating" | "ready" | "limited" | "upgrade-required" | "unsupported" | "disposed";
   readonly lifecycle: LifecycleState;
   readonly focus: number;
   readonly capabilitiesChecked: boolean;
@@ -155,6 +176,7 @@ export interface ProductionShell {
 export type DiagnosticType =
   | "capability-probe"
   | "capability-decision"
+  | "relay-negotiation"
   | "lifecycle"
   | "command-rejected"
   | "shell-disposed";
@@ -164,6 +186,9 @@ export type DiagnosticCode =
   | "supported"
   | "limited"
   | "unsupported"
+  | "upgrade-required"
+  | "negotiating"
+  | "retry"
   | "foreground"
   | "background"
   | "not-ready"

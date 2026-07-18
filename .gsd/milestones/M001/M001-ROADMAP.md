@@ -94,7 +94,7 @@ This milestone is complete only when all are true:
   > After this: disconnect or suspend leaves a readable `STALE` snapshot with actions disabled, and recovery becomes `LIVE` only after directory refetch/resubscribe and current-Agent timeline reconciliation finish without focus loss.
 - [ ] **S10: Private read-only dogfood and gateway decision gate (HITL)** `risk:medium` `depends:[S08,S09]`
   > After this: multiple Workspaces, Agents, Subagents, Attention overflow, daemon restart, and 30-minute resource behavior pass private read-only dogfood, and a projection gateway is opened only if measured limits fail.
-- [ ] **S11: Capability and minimum-client fail-closed negotiation (AFK)** `risk:high` `depends:[S04]`
+- [x] **S11: Capability and minimum-client fail-closed negotiation (AFK)** `risk:high` `depends:[S04]`
   > After this: the existing hello path negotiates R1 capabilities and minimum client versions end to end, and unsupported combinations show a recoverable upgrade/unsupported screen before sensitive data or actions are enabled.
 - [ ] **S12: Immutable audited Creation release path (AFK + HITL)** `risk:medium` `depends:[S03]`
   > After this: a versioned immutable URL with vendored QR, strict CSP, dependency pinning, audit digest, and cache-busted upgrade installs reproducibly on the owned R1.

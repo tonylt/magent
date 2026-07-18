@@ -55,11 +55,38 @@ export function createProductionView({
         list.append(row);
       });
       body.append(list);
+    } else if (viewModel.screen === "recover") {
+      body.append(element("p", "safety-label", viewModel.status));
+      const message = viewModel.title === "UPGRADE REQUIRED"
+        ? "UPDATE REQUIRED BEFORE PASEO DATA"
+        : "RELAY IS NOT COMPATIBLE";
+      body.append(element("h1", "decision", message));
+      if (viewModel.reasons.length > 0) {
+        body.append(element("p", "reasons", viewModel.reasons.join(" / ")));
+      }
+      if (viewModel.recoverable) {
+        const list = element("div", "menu");
+        list.setAttribute("role", "listbox");
+        const row = element("button", "menu-item");
+        row.type = "button";
+        row.setAttribute("role", "option");
+        row.setAttribute("aria-current", "true");
+        row.setAttribute("aria-selected", "true");
+        row.append(element("span", "item-title", "RETRY"));
+        row.append(element("span", "item-detail", "CHECK RELAY AGAIN"));
+        row.addEventListener("click", () => dispatch({ type: "activate" }));
+        list.append(row);
+        body.append(list);
+      }
     } else {
       body.append(element("p", "safety-label", viewModel.status));
       const message = viewModel.screen === "checking"
         ? "CAPABILITY PROBE IN PROGRESS"
-        : "DEVICE CAPABILITIES DO NOT ALLOW PASEO DATA";
+        : viewModel.screen === "checking-relay"
+          ? "RELAY COMPATIBILITY CHECK IN PROGRESS"
+          : viewModel.screen === "limited"
+            ? "READ-ONLY: SOME CAPABILITIES LIMITED"
+            : "DEVICE CAPABILITIES DO NOT ALLOW PASEO DATA";
       body.append(element("h1", "decision", message));
       if (viewModel.reasons.length > 0) {
         body.append(element("p", "reasons", viewModel.reasons.join(" / ")));

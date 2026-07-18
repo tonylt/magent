@@ -82,3 +82,36 @@ test("@production page resumes semantic input after lifecycle restoration", asyn
   await page.keyboard.press("ArrowDown");
   await expect(page.locator('[aria-current="true"]')).toContainText("RELAY NOT CONFIGURED");
 });
+
+test("@production relay negotiation reaches relay-compatible ready", async ({ page }) => {
+  const failures = watchPageFailures(page);
+  await page.goto("/dist/production/?fixture=supported&relay=wellBehaved");
+  await expect(page.locator("#app")).toHaveAttribute("data-screen", "ready");
+  await expect(page.locator(".status")).toContainText("RELAY COMPATIBLE");
+  await expect(page.getByRole("option", { name: /RELAY COMPATIBLE/ })).toBeVisible();
+  await expect(page.locator("#app")).not.toContainText("WORKSPACE");
+  await expect(page).toHaveScreenshot("production-relay-ready.png");
+  expect(await shellGeometry(page)).toEqual({
+    viewport: [240, 282],
+    document: [240, 282],
+    app: [240, 282],
+  });
+  expect(failures).toEqual([]);
+});
+
+test("@production incompatible relay shows a recoverable upgrade screen with retry", async ({ page }) => {
+  const failures = watchPageFailures(page);
+  await page.goto("/dist/production/?fixture=supported&relay=protocolTooOld");
+  await expect(page.locator("#app")).toHaveAttribute("data-screen", "recover");
+  await expect(page.locator(".title")).toContainText("UPGRADE REQUIRED");
+  await expect(page.locator(".reasons")).toContainText("RELAY PROTOCOL TOO OLD");
+  await expect(page.locator("#app")).toContainText("NO DATA");
+  await expect(page.locator("#app")).not.toContainText("WORKSPACE");
+  await expect(page).toHaveScreenshot("production-relay-upgrade.png");
+
+  // The RETRY affordance re-runs negotiation; the deterministic fixture stays incompatible.
+  await page.getByRole("option", { name: /RETRY/ }).click();
+  await expect(page.locator("#app")).toHaveAttribute("data-screen", "recover");
+  await expect(page.locator(".title")).toContainText("UPGRADE REQUIRED");
+  expect(failures).toEqual([]);
+});

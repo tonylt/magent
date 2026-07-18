@@ -5,9 +5,9 @@ Last updated: 2026-07-18
 ## Current Position
 
 - Milestone: M001 - Rabbit R1 Paseo Companion Daily-Use Release
-- Active slices: S02 - Firmware-bound owned-R1 capability matrix (awaiting hardware); S05 - Real-R1 private Relay E2EE bootstrap (blocked on S02)
-- Status: S01/S03/S04 complete; S02 awaiting owned-R1 hardware; S05 blocked on S02
-- Completed slices: 3 / 21
+- Active slices: S02 - Firmware-bound owned-R1 capability matrix (awaiting hardware); S05 - Real-R1 private Relay E2EE bootstrap (blocked on S02); S12 - Immutable audited Creation release path (AFK parts, `depends:[S03]`)
+- Status: S01/S03/S04/S11 complete; S02 awaiting owned-R1 hardware; S05 blocked on S02
+- Completed slices: 4 / 21
 - Roadmap: `.gsd/milestones/M001/M001-ROADMAP.md`
 
 ## Recent Progress
@@ -20,6 +20,7 @@ Last updated: 2026-07-18
 - `46974df` made canceled native voice drain terminal-bound and routed touch detail commands through the shared adapter path.
 - `0e543e0` recorded S03 production shell completion.
 - S04 pinned the Relay `hello`/`offer`/`subscribe`/`frame` subset into a pure contract, a transport boundary, a compatibility tracer, and fixtures that fail visibly on any drift, without opening a real network or shipping in the default bundle.
+- S11 merged the S04 tracer and the S03 device gate into one boot-time fail-closed negotiation, added a `CHECKING RELAY` transition and a recoverable `UPGRADE REQUIRED`/`UNSUPPORTED` recovery screen with retry, and advanced the ready state to `RELAY COMPATIBLE` — all driven by S04 fixtures over a loopback `?relay=` source, still exposing no product data.
 
 ## Execution Rules
 
@@ -31,4 +32,4 @@ Last updated: 2026-07-18
 
 ## Next Gate
 
-S02 requires owned-R1 evidence and cannot be completed automatically. S05 depends on S02 and S04; with S04 now complete, S05 is blocked only on owned-R1 hardware. The next autonomous work is S11 (capability and minimum-client fail-closed negotiation, `depends:[S04]`) or S12 (immutable audited Creation release path, `depends:[S03]`), both of which can proceed against fixtures without hardware.
+S02 requires owned-R1 evidence and cannot be completed automatically; S05 depends on S02 and S04. With S04 and S11 complete, the next autonomous work is S12 (immutable audited Creation release path, `depends:[S03]`), whose AFK parts (versioned immutable URL, vendored QR, strict CSP, dependency pinning, audit digest, cache-busted upgrade) can proceed against fixtures; its fresh-install-on-R1 confirmation is HITL and needs the owned device.
