@@ -15,6 +15,11 @@ function watchPageFailures(page) {
   });
   page.on("pageerror", (error) => failures.push(`page: ${error.message}`));
   page.on("requestfailed", (request) => failures.push(`request: ${request.url()}`));
+  page.on("request", (request) => {
+    if (new URL(request.url()).origin !== "http://127.0.0.1:4173") {
+      failures.push(`cross-origin request: ${request.url()}`);
+    }
+  });
   return failures;
 }
 
@@ -33,6 +38,11 @@ test("@production browser and Rabbit fixtures run the same capability-first shel
     document: [240, 282],
     app: [240, 282],
   });
+  const domBudget = await page.evaluate(async () => {
+    const budgets = await fetch("./budgets.json").then((response) => response.json());
+    return { nodes: document.querySelectorAll("*").length, max: budgets.maxDomNodes };
+  });
+  expect(domBudget.nodes).toBeLessThanOrEqual(domBudget.max);
 
   await page.addInitScript(() => {
     window.CreationVoiceHandler = { postMessage() {} };
@@ -63,4 +73,12 @@ test("@production page rejects touch commands after backgrounding", async ({ pag
   await page.evaluate(() => dispatchEvent(new Event("pagehide")));
   await page.getByRole("option", { name: /RELAY NOT CONFIGURED/ }).click();
   await expect(page.locator('[aria-current="true"]')).toContainText("DEVICE CAPABILITIES");
+});
+
+test("@production page resumes semantic input after lifecycle restoration", async ({ page }) => {
+  await page.goto("/dist/production/?fixture=supported");
+  await page.evaluate(() => dispatchEvent(new Event("pagehide")));
+  await page.evaluate(() => dispatchEvent(new Event("pageshow")));
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator('[aria-current="true"]')).toContainText("RELAY NOT CONFIGURED");
 });
