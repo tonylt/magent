@@ -10,10 +10,13 @@
     "test:production-browser": "npm run build && playwright test -g @production",
     "typecheck": "tsc --noEmit",
     "build": "node scripts/build-production.mjs",
+    "verify:production-source": "node scripts/verify-production-source.mjs",
+    "verify:production-output": "npm run build && node scripts/verify-production-output.mjs",
+    "verify:production": "npm run typecheck && npm run test:production && npm run verify:production-source && npm run verify:production-output && npm run test:production-browser",
     "test:browser": "playwright test",
     "test:browser:update": "playwright test --update-snapshots",
     "verify:budgets": "node scripts/verify-budgets.mjs && playwright test -g budgets",
-    "verify": "npm test && npm run verify:budgets && npm run test:browser"
+    "verify": "npm test && npm run verify:budgets && npm run verify:production-source && npm run verify:production-output && npm run test:browser"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",
