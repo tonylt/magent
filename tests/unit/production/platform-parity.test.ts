@@ -88,6 +88,16 @@ test("browser and Rabbit raw input produce the same foreground semantic commands
   assert.deepEqual(commands(browserEvents).at(-1), { type: "previous" });
   assert.deepEqual(commands(rabbitEvents).at(-1), { type: "previous" });
 
+  browser.sendCommand({ type: "focus-at", index: 2 }, "touch");
+  rabbit.sendCommand({ type: "focus-at", index: 2 }, "touch");
+  const semanticDetails = (events: PlatformEvent[]) => events
+    .filter((event) => event.type === "command")
+    .at(-1);
+  assert.deepEqual(semanticDetails(browserEvents), {
+    type: "command", command: { type: "focus-at", index: 2 }, source: "touch", sequence: 8,
+  });
+  assert.deepEqual(semanticDetails(rabbitEvents), semanticDetails(browserEvents));
+
   browser.dispose();
   rabbit.dispose();
   browserDom.document.dispatchEvent(key("keydown", "ArrowDown"));

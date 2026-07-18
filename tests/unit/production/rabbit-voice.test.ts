@@ -74,6 +74,21 @@ test("quarantines a normal terminal before binding another request", async () =>
   adapter.dispose();
 });
 
+test("a canceled request remains draining until its native terminal arrives", async () => {
+  const dom = createRabbitDom();
+  const adapter = createRabbitPlatformAdapter({ ...dom, terminalQuarantineMs: 0 });
+
+  await adapter.startVoice("old");
+  dom.host.dispatchEvent(new Event("pagehide"));
+  dom.host.dispatchEvent(new Event("pageshow"));
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.deepEqual(await adapter.startVoice("new"), { ok: false, error: "busy" });
+
+  dom.host.onPluginMessage?.({ type: "sttEnded", transcript: "late old terminal" });
+  assert.deepEqual(await adapter.startVoice("new"), { ok: true, requestId: "new" });
+  adapter.dispose();
+});
+
 test("dispose stops active native voice and makes voice APIs terminal", async () => {
   const dom = createRabbitDom();
   const adapter = createRabbitPlatformAdapter(dom);
