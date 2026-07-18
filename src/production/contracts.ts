@@ -41,6 +41,10 @@ export type VoiceError =
   | "empty-transcript"
   | "interrupted";
 
+export type VoiceResult =
+  | Readonly<{ type: "transcript"; text: string }>
+  | Readonly<{ type: "error"; code: VoiceError }>;
+
 export type PlatformEvent =
   | Readonly<{
       type: "command";
@@ -57,9 +61,7 @@ export type PlatformEvent =
   | Readonly<{
       type: "voice-result";
       requestId: string;
-      result:
-        | Readonly<{ type: "transcript"; text: string }>
-        | Readonly<{ type: "error"; code: VoiceError }>;
+      result: VoiceResult;
       sequence: number;
     }>;
 
