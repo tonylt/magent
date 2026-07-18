@@ -5,15 +5,18 @@ Last updated: 2026-07-18
 ## Current Position
 
 - Milestone: M001 - Rabbit R1 Paseo Companion Daily-Use Release
-- Active slice: S01 - Automated Creation probe baseline
-- Status: in progress
-- Completed slices: 0 / 21
+- Active slices: S02 - Firmware-bound owned-R1 capability matrix; S03 - Production Creation shell and platform adapters
+- Status: S01 complete; S02/S03 ready
+- Completed slices: 1 / 21
 - Roadmap: `.gsd/milestones/M001/M001-ROADMAP.md`
 
 ## Recent Progress
 
 - `66e0e47` established the approved product, architecture, UI/UX, ADR, prototype, design-review evidence, and M001 roadmap baseline.
-- S01 implementation is proceeding test-first against the existing build-free `demo/` entrypoint.
+- `f31ee84` defined the S01 deterministic unit and browser contracts.
+- `af2c4d6` wired the static probe through semantic input, Rabbit bridge, pure store, sanitized diagnostics, budgets, and fixed screenshots.
+- `63ff62a` closed review findings for background input, delayed release after the recording cap, and single-source runtime budgets.
+- `80d6ec0` preserved touch focus details through the unified foreground input gate.
 
 ## Execution Rules
 
@@ -24,4 +27,4 @@ Last updated: 2026-07-18
 
 ## Next Gate
 
-S01 is complete only after deterministic input/store tests, fixed 240x282 browser screenshots, resource-budget checks, and sanitized bounded diagnostic-log checks pass.
+S02 requires owned-R1 evidence and cannot be completed automatically. S03 can proceed in parallel using the stable S01 adapter and store boundaries.

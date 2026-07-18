@@ -5,7 +5,7 @@ title: Automated Creation probe baseline
 type: tdd
 wave: 1
 depends_on: []
-status: in_progress
+status: complete
 autonomous: true
 requirements: [R001, R012]
 files_modified:
