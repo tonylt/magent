@@ -75,6 +75,10 @@ test("browser and Rabbit raw input produce the same foreground semantic commands
   rabbitDom.host.dispatchEvent(new Event("scrollDown"));
   assert.equal(commands(browserEvents).length, 4);
   assert.equal(commands(rabbitEvents).length, 4);
+  assert.deepEqual(
+    browserEvents.filter((event) => event.type === "lifecycle").map(({ state, cause }) => ({ state, cause })),
+    rabbitEvents.filter((event) => event.type === "lifecycle").map(({ state, cause }) => ({ state, cause })),
+  );
 
   browserDom.host.dispatchEvent(new Event("pageshow"));
   rabbitDom.host.dispatchEvent(new Event("pageshow"));
@@ -85,4 +89,8 @@ test("browser and Rabbit raw input produce the same foreground semantic commands
 
   browser.dispose();
   rabbit.dispose();
+  browserDom.document.dispatchEvent(key("keydown", "ArrowDown"));
+  rabbitDom.host.dispatchEvent(new Event("scrollDown"));
+  assert.equal(commands(browserEvents).length, 5);
+  assert.equal(commands(rabbitEvents).length, 5);
 });
