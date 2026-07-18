@@ -4,6 +4,11 @@ import { createInputController } from "./lib/input-controller.js";
 import { createInitialProbeState, reduceProbeState } from "./lib/probe-store.js";
 import { createRabbitBridgeAdapter } from "./lib/rabbit-bridge-adapter.js";
 
+// Signal that the ES module actually started executing, so the classic bootstrap
+// diagnostic in index.html can distinguish "module never started" (no module /
+// top-level await support, or stale cache) from a runtime error it also captures.
+window.__probeStarted = true;
+
 const app = document.querySelector("#app");
 
 const DEFAULT_BUDGETS = { diagnostics: { entries: 64, serializedBytes: 16384 } };

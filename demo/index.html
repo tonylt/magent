@@ -5,37 +5,36 @@
   <meta name="viewport" content="width=240, initial-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#090a0a">
   <title>Paseo Creation Probe</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
-  <main id="app" aria-live="polite"></main>
+  <main id="app" aria-live="polite"><pre id="boot" style="margin:0;padding:12px;color:#f4f2ec;background:#090a0a;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word;">Paseo Probe v2
+Starting&#8230;</pre></main>
   <script>
-    /* Classic (non-module) bootstrap diagnostic: runs even if the WebView cannot
-       parse ES modules or top-level await, so a failed boot shows a message on
-       screen instead of a black canvas. */
+    /* Classic (non-module) diagnostic. Runs even if the WebView cannot parse ES
+       modules or top-level await, so boot failures are visible on device. The
+       static banner above is always painted with inline styles, so a black screen
+       means old cached content or the page did not load at all. */
     (function () {
-      var app = document.getElementById("app");
-      if (app && app.childElementCount === 0) app.textContent = "PROBE LOADING\u2026";
-      window.__probeBootError = null;
+      var boot = document.getElementById("boot");
+      function show(msg) { if (boot) boot.textContent = "Paseo Probe v2\n" + msg; }
+      window.__probeStarted = false;
       window.addEventListener("error", function (event) {
-        window.__probeBootError = (event && (event.message || (event.error && event.error.message))) || "script error";
-        if (app && app.childElementCount === 0) app.textContent = "PROBE ERROR: " + window.__probeBootError;
+        var msg = (event && (event.message || (event.error && event.error.message))) || "unknown";
+        show("SCRIPT ERROR: " + msg + (event && event.filename ? ("\n" + event.filename) : ""));
       });
       window.addEventListener("unhandledrejection", function (event) {
         var reason = event && event.reason;
-        window.__probeBootError = (reason && (reason.message || String(reason))) || "load error";
-        if (app && app.childElementCount === 0) app.textContent = "PROBE ERROR: " + window.__probeBootError;
+        show("PROMISE ERROR: " + ((reason && (reason.message || String(reason))) || "unknown"));
       });
       setTimeout(function () {
-        if (app && app.childElementCount === 0) {
-          app.textContent = "PROBE DID NOT START in 5s. "
-            + (window.__probeBootError
-              ? ("Error: " + window.__probeBootError)
-              : "No script error captured \u2014 the WebView may not support ES modules or top-level await.");
+        if (!window.__probeStarted) {
+          show("MODULE DID NOT START in 6s.\nURL: " + location.href
+            + "\nWebView may not support ES modules / top-level await, or a stale version is cached.");
         }
-      }, 5000);
+      }, 6000);
     })();
   </script>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js?v=2"></script>
 </body>
 </html>
