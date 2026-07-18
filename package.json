@@ -1,0 +1,16 @@
+{
+  "name": "rabbit-r1-paseo-companion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/unit/*.test.js",
+    "test:browser": "playwright test",
+    "test:browser:update": "playwright test --update-snapshots",
+    "verify:budgets": "node scripts/verify-budgets.mjs",
+    "verify": "npm test && npm run verify:budgets && npm run test:browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1"
+  }
+}
