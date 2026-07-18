@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import type { PlatformEvent } from "../../../src/production/contracts.ts";
 import { createRabbitPlatformAdapter } from "../../../src/production/platform/rabbit.ts";
 
 interface RabbitTestHost extends EventTarget {
@@ -28,5 +29,34 @@ test("rejects an empty voice request identity before touching the native bridge"
   const adapter = createRabbitPlatformAdapter(dom);
   assert.deepEqual(await adapter.startVoice(""), { ok: false, error: "invalid-request" });
   assert.deepEqual(dom.messages, []);
+  adapter.dispose();
+});
+
+test("cancels on background and drains the old terminal before a new request", async () => {
+  const dom = createRabbitDom();
+  const adapter = createRabbitPlatformAdapter(dom);
+  const events: PlatformEvent[] = [];
+  adapter.subscribe((event) => events.push(event));
+
+  assert.deepEqual(await adapter.startVoice("voice-1"), { ok: true, requestId: "voice-1" });
+  dom.host.dispatchEvent(new Event("pagehide"));
+  await Promise.resolve();
+  assert.deepEqual(dom.messages, ["start", "stop"]);
+  assert.deepEqual(await adapter.startVoice("voice-2"), { ok: false, error: "background" });
+
+  dom.host.onPluginMessage?.({ type: "sttEnded", transcript: "old transcript" });
+  assert.equal(events.filter((event) => event.type === "voice-result").length, 1);
+
+  dom.host.dispatchEvent(new Event("pageshow"));
+  assert.deepEqual(await adapter.startVoice("voice-2"), { ok: true, requestId: "voice-2" });
+  assert.deepEqual(await adapter.stopVoice("voice-2"), { ok: true, requestId: "voice-2" });
+  dom.host.onPluginMessage?.({ type: "sttEnded", transcript: "new transcript" });
+  dom.host.onPluginMessage?.({ type: "sttEnded", transcript: "late duplicate" });
+
+  const voiceResults = events.filter((event) => event.type === "voice-result");
+  assert.deepEqual(voiceResults.map(({ requestId, result }) => ({ requestId, result })), [
+    { requestId: "voice-1", result: { type: "error", code: "interrupted" } },
+    { requestId: "voice-2", result: { type: "transcript", text: "new transcript" } },
+  ]);
   adapter.dispose();
 });
