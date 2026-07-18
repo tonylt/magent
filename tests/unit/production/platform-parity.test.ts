@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import type { PlatformEvent } from "../../../src/production/contracts.ts";
 import { createBrowserPlatformAdapter } from "../../../src/production/platform/browser.ts";
+import { createBrowserVoiceFixture } from "../../../src/production/platform/browser.ts";
 import { createRabbitPlatformAdapter } from "../../../src/production/platform/rabbit.ts";
 
 interface TestHost extends EventTarget {
@@ -93,4 +94,33 @@ test("browser and Rabbit raw input produce the same foreground semantic commands
   rabbitDom.host.dispatchEvent(new Event("scrollDown"));
   assert.equal(commands(browserEvents).length, 5);
   assert.equal(commands(rabbitEvents).length, 5);
+});
+
+test("browser and Rabbit fixtures emit the same voice result contract", async () => {
+  const browserDom = createDom();
+  const rabbitDom = createDom();
+  const browserVoice = createBrowserVoiceFixture();
+  const rabbitHost = rabbitDom.host as TestHost & {
+    CreationVoiceHandler: { postMessage(message: "start" | "stop"): void };
+    onPluginMessage?: (message: unknown) => void;
+  };
+  rabbitHost.CreationVoiceHandler = { postMessage() {} };
+  const browser = createBrowserPlatformAdapter({ ...browserDom, voice: browserVoice });
+  const rabbit = createRabbitPlatformAdapter({ host: rabbitHost, document: rabbitDom.document });
+  const browserEvents: PlatformEvent[] = [];
+  const rabbitEvents: PlatformEvent[] = [];
+  browser.subscribe((event) => browserEvents.push(event));
+  rabbit.subscribe((event) => rabbitEvents.push(event));
+
+  await browser.startVoice("voice-1");
+  await rabbit.startVoice("voice-1");
+  browserVoice.complete("voice-1", { type: "transcript", text: "same result" });
+  rabbitHost.onPluginMessage?.({ type: "sttEnded", transcript: "same result" });
+
+  const result = (events: PlatformEvent[]) => events
+    .filter((event) => event.type === "voice-result")
+    .map(({ requestId, result }) => ({ requestId, result }));
+  assert.deepEqual(result(browserEvents), result(rabbitEvents));
+  browser.dispose();
+  rabbit.dispose();
 });

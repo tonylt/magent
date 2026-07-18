@@ -65,3 +65,16 @@ test("checks device capabilities before rendering a Rabbit shell as limited", as
   assert.equal(shell.state().productDataEnabled, false);
   shell.dispose();
 });
+
+test("fails closed when capability inspection rejects", async () => {
+  const rendered: ShellViewModel[] = [];
+  const adapter = createAdapter({} as CapabilitySnapshot);
+  adapter.inspectCapabilities = async () => { throw new Error("private bridge detail"); };
+  const shell = createProductionShell({ adapter, render: (view) => rendered.push(view) });
+
+  await shell.start();
+  assert.equal(rendered.at(-1)?.screen, "unsupported");
+  assert.equal(rendered.at(-1)?.status, "NO DATA");
+  assert.equal(JSON.stringify(shell.diagnostics()).includes("private bridge detail"), false);
+  shell.dispose();
+});

@@ -60,3 +60,27 @@ test("cancels on background and drains the old terminal before a new request", a
   ]);
   adapter.dispose();
 });
+
+test("quarantines a normal terminal before binding another request", async () => {
+  const dom = createRabbitDom();
+  const adapter = createRabbitPlatformAdapter({ ...dom, terminalQuarantineMs: 1_000 });
+
+  assert.deepEqual(await adapter.startVoice("voice-1"), { ok: true, requestId: "voice-1" });
+  dom.host.onPluginMessage?.({ type: "sttEnded", transcript: "first" });
+  assert.deepEqual(await adapter.startVoice("voice-2"), { ok: false, error: "busy" });
+
+  dom.host.onPluginMessage?.({ type: "sttEnded", transcript: "late duplicate" });
+  assert.deepEqual(await adapter.startVoice("voice-2"), { ok: true, requestId: "voice-2" });
+  adapter.dispose();
+});
+
+test("dispose stops active native voice and makes voice APIs terminal", async () => {
+  const dom = createRabbitDom();
+  const adapter = createRabbitPlatformAdapter(dom);
+  await adapter.startVoice("voice-1");
+  adapter.dispose();
+
+  assert.deepEqual(dom.messages, ["start", "stop"]);
+  assert.deepEqual(await adapter.startVoice("voice-2"), { ok: false, error: "disposed" });
+  assert.deepEqual(await adapter.stopVoice("voice-1"), { ok: false, error: "disposed" });
+});
