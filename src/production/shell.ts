@@ -60,6 +60,10 @@ export function createProductionShell({
         title: "PASEO R1",
         status: "READY FOR RELAY",
         reasons: [],
+        items: [
+          { title: "DEVICE CAPABILITIES", detail: "CHECKED BEFORE DATA" },
+          { title: "RELAY NOT CONFIGURED", detail: "S04 REQUIRED" },
+        ],
         focus: current.focus,
       });
       return;

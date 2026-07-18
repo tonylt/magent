@@ -1,0 +1,10 @@
+{
+  "maxStaticBytes": 131072,
+  "maxJavaScriptBytes": 65536,
+  "maxCssBytes": 49152,
+  "maxSingleFileBytes": 65536,
+  "maxRemoteRequests": 0,
+  "maxDomNodes": 48,
+  "viewportWidth": 240,
+  "viewportHeight": 282
+}

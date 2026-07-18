@@ -13,6 +13,14 @@ interface RabbitHost extends HostSurface {
   onPluginMessage?: (message: unknown) => void;
 }
 
+export function isRabbitHost(host: unknown): host is RabbitHost {
+  if (!host || typeof host !== "object") return false;
+  const candidate = host as Record<string, unknown>;
+  return "CreationVoiceHandler" in candidate
+    || "creationStorage" in candidate
+    || "creationSensors" in candidate;
+}
+
 function orientation(width: number, height: number): "portrait" | "landscape" | "unknown" {
   if (width === height) return "unknown";
   return width < height ? "portrait" : "landscape";

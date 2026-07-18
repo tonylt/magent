@@ -112,6 +112,10 @@ export type ShellViewModel =
       title: "PASEO R1";
       status: "READY FOR RELAY";
       reasons: readonly [];
+      items: readonly [
+        Readonly<{ title: "DEVICE CAPABILITIES"; detail: "CHECKED BEFORE DATA" }>,
+        Readonly<{ title: "RELAY NOT CONFIGURED"; detail: "S04 REQUIRED" }>,
+      ];
       focus: number;
     }>
   | Readonly<{
