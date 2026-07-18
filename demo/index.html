@@ -9,6 +9,33 @@
 </head>
 <body>
   <main id="app" aria-live="polite"></main>
+  <script>
+    /* Classic (non-module) bootstrap diagnostic: runs even if the WebView cannot
+       parse ES modules or top-level await, so a failed boot shows a message on
+       screen instead of a black canvas. */
+    (function () {
+      var app = document.getElementById("app");
+      if (app && app.childElementCount === 0) app.textContent = "PROBE LOADING\u2026";
+      window.__probeBootError = null;
+      window.addEventListener("error", function (event) {
+        window.__probeBootError = (event && (event.message || (event.error && event.error.message))) || "script error";
+        if (app && app.childElementCount === 0) app.textContent = "PROBE ERROR: " + window.__probeBootError;
+      });
+      window.addEventListener("unhandledrejection", function (event) {
+        var reason = event && event.reason;
+        window.__probeBootError = (reason && (reason.message || String(reason))) || "load error";
+        if (app && app.childElementCount === 0) app.textContent = "PROBE ERROR: " + window.__probeBootError;
+      });
+      setTimeout(function () {
+        if (app && app.childElementCount === 0) {
+          app.textContent = "PROBE DID NOT START in 5s. "
+            + (window.__probeBootError
+              ? ("Error: " + window.__probeBootError)
+              : "No script error captured \u2014 the WebView may not support ES modules or top-level await.");
+        }
+      }, 5000);
+    })();
+  </script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

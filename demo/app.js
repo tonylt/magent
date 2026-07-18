@@ -5,9 +5,16 @@ import { createInitialProbeState, reduceProbeState } from "./lib/probe-store.js"
 import { createRabbitBridgeAdapter } from "./lib/rabbit-bridge-adapter.js";
 
 const app = document.querySelector("#app");
-const budgetResponse = await fetch("./budgets.json");
-if (!budgetResponse.ok) throw new Error("probe budget manifest unavailable");
-const budgets = await budgetResponse.json();
+
+const DEFAULT_BUDGETS = { diagnostics: { entries: 64, serializedBytes: 16384 } };
+let budgets = DEFAULT_BUDGETS;
+try {
+  const budgetResponse = await fetch("./budgets.json");
+  if (budgetResponse.ok) budgets = await budgetResponse.json();
+} catch {
+  // Non-fatal: fall back to defaults so the probe still renders and can report state.
+  budgets = DEFAULT_BUDGETS;
+}
 
 const agents = [
   { title: "Creation probe", meta: "CODEX · RUNNING · ROOT" },
@@ -314,14 +321,16 @@ diagnostics.record("boot", {
 });
 
 // S02 evidence capture: sanitized, bounded, payload-free. Headless (no DOM change);
-// the export hook is exposed only with ?evidence for the owned-R1 UAT run.
-const PROBE_VERSION = "s02-1";
-const evidence = createEvidenceCollector({
-  version: PROBE_VERSION,
-  digest: document.querySelector('meta[name="probe-digest"]')?.content ?? "",
-  originClass: deriveOriginClass(location),
-});
-(function captureEnvironment() {
+// the export hook is exposed only with ?evidence for the owned-R1 UAT run. Wrapped so
+// evidence capture can never block first paint or blank the screen.
+let evidence = null;
+try {
+  const PROBE_VERSION = "s02-1";
+  evidence = createEvidenceCollector({
+    version: PROBE_VERSION,
+    digest: document.querySelector('meta[name="probe-digest"]')?.content ?? "",
+    originClass: deriveOriginClass(location),
+  });
   const capabilities = bridge.capabilities();
   evidence.setFirmware("unknown"); // Tested-firmware is a human decision recorded on device.
   evidence.setViewport({
@@ -335,10 +344,12 @@ const evidence = createEvidenceCollector({
     secureStorage: Boolean(capabilities.secureStorage),
     sensors: Boolean(capabilities.sensors),
   });
-})();
+} catch {
+  evidence = null;
+}
 
 const search = new URLSearchParams(location.search);
-if (search.has("evidence")) {
+if (evidence && search.has("evidence")) {
   window.__probeEvidence = Object.freeze({
     export: () => evidence.export(),
     setFirmware: (status) => evidence.setFirmware(status),
