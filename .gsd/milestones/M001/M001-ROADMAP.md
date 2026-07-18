@@ -80,7 +80,7 @@ This milestone is complete only when all are true:
   > After this: one tested firmware has recorded `PASS/FALLBACK/BLOCKER` evidence for wheel, side-button/PTT races, STT, CJK/OSK, HTTPS/WSS, secure storage, device lock, suspend/resume, and resource limits before sensitive data is exposed.
 - [x] **S03: Production Creation shell and platform adapters (AFK)** `risk:medium` `depends:[S01]`
   > After this: the same production shell runs through either the deterministic browser adapter or RabbitOS adapter, with stable semantic commands and no private device API leaking into views.
-- [ ] **S04: Pinned Relay E2EE compatibility tracer (AFK)** `risk:high` `depends:[S03]`
+- [x] **S04: Pinned Relay E2EE compatibility tracer (AFK)** `risk:high` `depends:[S03]`
   > After this: a pinned Paseo client adapter exchanges the actual hello, offer, subscription, and frame subset against fixtures and fails visibly on a contract mismatch.
 - [ ] **S05: Real-R1 private Relay E2EE bootstrap (HITL)** `risk:high` `depends:[S02,S04]`
   > After this: the owned R1 uses the existing private Relay offer to reach a real daemon over WSS/E2EE and display one Workspace, one Attention item, and one live Agent timeline, explicitly marked private and not distributable.
