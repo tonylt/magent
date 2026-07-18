@@ -45,4 +45,3 @@ const render = createProductionView({
 });
 shell = createProductionShell({ adapter, render });
 void shell.start();
-window.addEventListener("pagehide", () => shell.dispose(), { once: true });
