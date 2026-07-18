@@ -1,0 +1,3 @@
+# Existing Relay offers are limited to private dogfood
+
+The current Relay offer grants a client trusted daemon-operator authority, so a read-only R1 UI does not create a cryptographic read-only boundary. Phase 0A, 0B, and Phase 1 are therefore owned-device private dogfood only and are not distributed as a product. A distributable Phase 2B beta requires an audited immutable bundle, reliable enabled RabbitOS device lock, and an independently revocable Host-bound Device grant scoped only to `read + follow-up`; it contains no Stop scope or UI. The Phase 3 daily-use release additionally requires Phase 2C and a separately approved `stop` scope.

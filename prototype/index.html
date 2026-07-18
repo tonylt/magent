@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Paseo for Rabbit R1 Prototype</title>
   <style>
     :root {
       --canvas: #090a0a;
-      --surface: #111313;
-      --surface-raised: #191c1b;
+      --surface: #101212;
+      --surface-raised: #181b1a;
       --hairline: #2a2d2b;
-      --hairline-strong: #4a4e49;
+      --hairline-strong: #454943;
       --text: #f4f2ec;
-      --text-secondary: #b8bbb4;
-      --text-muted: #777c75;
+      --text-secondary: #b2b5ae;
+      --text-muted: #7d827b;
       --orange: #ff4f18;
       --orange-pressed: #d83b0b;
       --running: #f0b429;
@@ -36,7 +36,7 @@
       background: #d9d9d4;
       color: var(--text);
     }
-    button, textarea { font: inherit; }
+    button { font: inherit; }
 
     .device {
       position: relative;
@@ -82,22 +82,21 @@
       width: 240px;
       height: 282px;
       overflow: hidden;
-      border: 1px solid #262727;
       border-radius: 3px;
       outline: none;
       background: var(--canvas);
-      box-shadow: inset 0 0 0 1px #000, 0 5px 20px rgba(0,0,0,.22);
+      box-shadow: 0 0 0 1px #262727, inset 0 0 0 1px #000, 0 5px 20px rgba(0,0,0,.22);
     }
     .view {
       position: absolute;
       inset: 0;
       display: grid;
-      grid-template-rows: 3px 36px minmax(0, 1fr) 34px;
+      grid-template-rows: 3px 36px minmax(0, 1fr) 44px;
       overflow: hidden;
       background: var(--canvas);
     }
     .view.no-rail { grid-template-rows: 3px 36px minmax(0, 1fr); }
-    .view.has-stale { grid-template-rows: 3px 36px 18px minmax(0, 1fr) 34px; }
+    .view.has-stale { grid-template-rows: 3px 36px 18px minmax(0, 1fr) 44px; }
     .view.no-rail.has-stale { grid-template-rows: 3px 36px 18px minmax(0, 1fr); }
     .view.has-stale > .content { grid-row: 4; }
     .view.has-stale > .action-rail { grid-row: 5; }
@@ -167,6 +166,7 @@
       display: grid;
       grid-template-columns: 12px minmax(0, 1fr) auto;
       grid-template-rows: 18px 14px;
+      grid-template-areas: "dot title attention" "dot meta attention";
       align-content: center;
       column-gap: 5px;
       padding: 5px 8px;
@@ -193,13 +193,14 @@
     }
     .row.selected::before, .action.selected::before { background: var(--orange); }
     .row-title {
+      grid-area: title;
       min-width: 0;
       align-self: end;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 12px;
-      line-height: 15px;
+      font-size: 13px;
+      line-height: 16px;
       font-weight: 650;
     }
     .meta {
@@ -212,10 +213,11 @@
       line-height: 11px;
       font-weight: 600;
     }
+    .row > .meta { grid-area: meta; }
     .row.selected .meta { color: #535752; }
 
     .dot {
-      grid-row: 1 / span 2;
+      grid-area: dot;
       align-self: center;
       width: 6px;
       height: 6px;
@@ -237,7 +239,7 @@
       transform: rotate(45deg);
     }
     .attention {
-      grid-row: 1 / span 2;
+      grid-area: attention;
       align-self: center;
       color: var(--orange);
       font-size: 8px;
@@ -263,13 +265,13 @@
       background: transparent;
       color: var(--text-secondary);
       font-size: 9px;
-      line-height: 34px;
+      line-height: 44px;
       font-weight: 750;
       cursor: pointer;
     }
     .action:last-child { border-right: 0; }
     .action.danger.selected { background: var(--error); color: #160605; }
-    .action:disabled { opacity: .38; cursor: not-allowed; }
+    .action:disabled { opacity: .65; cursor: not-allowed; }
 
     .agent-content {
       height: 100%;
@@ -280,29 +282,34 @@
       display: grid;
       grid-template-columns: 10px minmax(0,1fr) auto;
       grid-template-rows: 16px 13px;
+      grid-template-areas: "dot status step" "dot meta attention";
       column-gap: 6px;
       align-content: center;
       padding: 5px 8px;
       border-bottom: 1px solid var(--hairline);
       background: var(--surface);
     }
-    .status-band .dot { grid-row: 1 / span 2; }
+    .status-band .dot { grid-area: dot; }
     .status-label {
+      grid-area: status;
       align-self: end;
       font-size: 9px;
       line-height: 12px;
       font-weight: 750;
     }
     .status-attention {
+      grid-area: attention;
       align-self: end;
       color: var(--orange);
       font: 750 8px/10px ui-monospace, monospace;
     }
     .step-count {
+      grid-area: step;
       align-self: end;
       color: var(--running);
       font: 750 9px/11px ui-monospace, monospace;
     }
+    .status-band > .meta { grid-area: meta; }
     .timeline { height: 100%; overflow: hidden; }
     .timeline-item {
       position: relative;
@@ -427,6 +434,17 @@
     }
 
     .composer { height: 100%; padding: 8px; }
+    .draft-target {
+      margin-bottom: 5px;
+      color: var(--input);
+      font: 700 8px/10px ui-monospace, monospace;
+    }
+    .draft-target > span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .transcript {
       width: 100%;
       height: 130px;
@@ -439,8 +457,8 @@
       color: var(--text);
       font-size: 11px;
       line-height: 15px;
+      overflow-wrap: anywhere;
     }
-    .transcript:focus { border-color: var(--text-secondary); }
     .composer-meta {
       display: flex;
       justify-content: space-between;
@@ -465,7 +483,7 @@
       z-index: 20;
       left: 8px;
       right: 8px;
-      bottom: 42px;
+      bottom: 52px;
       min-height: 28px;
       display: grid;
       place-items: center;
@@ -482,6 +500,17 @@
       .device { width: 240px; height: 282px; border-radius: 0; box-shadow: none; }
       .device::after, .wheel { display: none; }
     }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 1ms !important;
@@ -494,7 +523,7 @@
 <body>
   <main class="device" aria-label="Rabbit R1 prototype shell">
     <div class="wheel" aria-hidden="true"></div>
-    <section id="app" tabindex="0" aria-label="Paseo Rabbit R1 client"></section>
+    <section id="app" role="application" tabindex="0" aria-label="Paseo Rabbit R1 client"></section>
   </main>
 
   <script>
@@ -504,52 +533,85 @@
         title: "Mobile app",
         project: "Paseo",
         host: "Studio",
-        aggregate: "RUNNING",
+        status: "needs_input",
         attention: "1 REVIEW",
         age: "NOW",
         agents: [
-          { id: "auth", title: "Release auth fix", provider: "CODEX", lifecycle: "idle", attention: "permission", relation: "ROOT", readOnly: false, permission: { schema: "confirm", complete: true, title: "Run focused mobile tests?", target: "npm run test:mobile -- --focused" } },
-          { id: "tests", title: "Run mobile tests", provider: "CLAUDE", lifecycle: "running", attention: null, relation: "SUBAGENT", readOnly: false },
-          { id: "audit", title: "Review reconnect logs", provider: "CLAUDE", lifecycle: "idle", attention: "finished", relation: "READ ONLY", readOnly: true }
-        ]
+          { id: "auth", title: "Release auth fix", provider: "CODEX", lifecycle: "idle", attention: "permission", attentionVersion: "permission-17", age: "NOW", relation: "ROOT", parentAgentId: null, readOnly: false, subagents: [
+            { id: "tests", title: "Run mobile tests", provider: "CLAUDE", lifecycle: "running", attention: null, relation: "MANAGED", native: false, readOnly: false, executionWorkspaceId: "relay", parentAgentId: "auth", turnId: "turn-204" },
+            { id: "audit", title: "Review reconnect logs", provider: "CLAUDE", lifecycle: "idle", attention: "finished", attentionVersion: "finished-9", age: "7M", relation: "NATIVE · READ ONLY", native: true, readOnly: true, parentAgentId: "auth" }
+          ], permission: { kind: "COMMAND", shapeCompleteness: "COMPLETE", detailCompleteness: "COMPLETE", title: "Run focused mobile tests?", target: "npm run test:mobile -- --focused", summary: "This command needs approval in a trusted full Paseo client." } }
+        ],
+        relatedSubagents: []
       },
       {
         id: "relay",
         title: "Relay hardening",
         project: "Paseo",
         host: "Studio",
-        aggregate: "IDLE",
+        status: "running",
         attention: null,
         age: "18M",
-        agents: [{ id: "relay-agent", title: "Refactor relay", provider: "OPENCODE", lifecycle: "idle", attention: null, relation: "ROOT", readOnly: false }]
+        agents: [{ id: "relay-agent", title: "Refactor relay", provider: "OPENCODE", lifecycle: "idle", attention: null, relation: "ROOT", readOnly: false, subagents: [] }],
+        relatedSubagents: []
       },
       {
         id: "docs",
         title: "Docs refresh",
         project: "Paseo docs",
         host: "Studio",
-        aggregate: "ERROR",
+        status: "failed",
         attention: "FAILED",
         age: "1H",
-        agents: [{ id: "docs-agent", title: "Update API docs", provider: "CODEX", lifecycle: "error", attention: "failed", relation: "ROOT", readOnly: false }]
+        agents: [{ id: "docs-agent", title: "Update API docs", provider: "CODEX", lifecycle: "error", attention: "error", attentionVersion: "error-4", age: "1H", relation: "ROOT", readOnly: false, subagents: [] }],
+        relatedSubagents: []
       }
     ];
 
+    workspaces[1].relatedSubagents = [workspaces[0].agents[0].subagents[0]];
+
     const state = {
       view: "home",
+      hasSnapshot: true,
+      attentionOverflow: 0,
+      pairingPhase: "unpaired",
       selected: 0,
       activeWorkspace: workspaces[0],
       activeAgent: workspaces[0].agents[0],
+      activeParentAgent: null,
+      agentOrigin: { view: "workspace", workspaceId: "mobile" },
       timelineFocus: 0,
-      connection: "online",
+      connection: "connecting",
+      grant: { status: "active", host: "Studio", scopes: ["read", "follow-up", "stop"] },
+      deviceSession: { status: "active", host: "Studio" },
+      deviceLock: true,
+      testedFirmware: true,
+      compatibility: "tested",
+      secureStorage: true,
+      stopContract: true,
       voicePhase: null,
       composerPhase: "review",
-      draft: "Please keep the API backward compatible and run the focused mobile tests before finishing.",
+      composerPage: 0,
+      composerVisitedMax: 0,
+      composerEntry: "draft",
+      draft: {
+        target: { host: "Studio", workspaceId: "relay", agentId: "tests" },
+        text: "Also include a reconnect regression test."
+      },
+      preDictationDraft: null,
       notice: null,
       nextVoiceFailure: false,
       nextSendFailure: false,
+      pendingCommandId: null,
+      pendingStop: null,
+      commandCounter: 0,
       toast: null,
       spaceHeld: false,
+      holdConsumed: false,
+      suppressNextSideClick: false,
+      suppressClickUntil: 0,
+      recordingStartedAt: 0,
+      recordingTimer: null,
       timer: null
     };
 
@@ -559,13 +621,44 @@
       return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
     }
 
+    function contentLang(value) {
+      return navigator.language || "en";
+    }
+
+    function visibleWindow(items, focus, size) {
+      const maxStart = Math.max(0, items.length - size);
+      const start = Math.max(0, Math.min(focus - size + 1, maxStart));
+      return { start, items: items.slice(start, start + size) };
+    }
+
+    function paginateText(value, pageSize = 150) {
+      const words = String(value || "").trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return [""];
+      const pages = [];
+      let page = "";
+      for (const word of words) {
+        if (page && `${page} ${word}`.length > pageSize) {
+          pages.push(page);
+          page = word;
+        } else {
+          page = page ? `${page} ${word}` : word;
+        }
+      }
+      if (page) pages.push(page);
+      return pages;
+    }
+
     function dot(kind) {
       return `<span class="dot ${kind}" aria-hidden="true"></span>`;
     }
 
     function header(title, detail = "") {
       const connectionClass = state.connection === "online" ? "live" : "stale";
-      const connectionLabel = state.connection === "online" ? "LIVE" : state.connection.toUpperCase();
+      const connectionLabel = state.connection === "online"
+        ? "LIVE"
+        : ["connecting", "syncing"].includes(state.connection)
+          ? "RECONNECTING"
+          : state.connection.toUpperCase();
       return `<header class="header"><div class="header-title">${escapeHtml(title)}</div><div class="header-meta ${connectionClass}">${detail ? `${escapeHtml(detail)} · ` : ""}${connectionLabel}</div></header>`;
     }
 
@@ -573,37 +666,128 @@
       return `<footer class="action-rail" role="toolbar">${actions.map((action, index) => {
         const selected = index === state.selected;
         const classes = ["action", selected ? "selected" : "", action.danger ? "danger" : ""].filter(Boolean).join(" ");
-        return `<button class="${classes}" data-rail="${index}" ${action.disabled ? "disabled" : ""}>${action.label}</button>`;
+        return `<button id="rail-${index}" class="${classes}" data-rail="${index}" tabindex="-1" ${action.disabled ? "disabled" : ""}>${action.label}</button>`;
       }).join("")}</footer>`;
     }
 
     function row(item, index) {
       const selected = index === state.selected;
-      return `<button class="row ${selected ? "selected" : ""}" data-row="${index}" role="option" aria-selected="${selected}">
+      return `<button id="option-${state.view}-${index}" class="row ${selected ? "selected" : ""}" data-row="${index}" tabindex="-1" ${selected ? 'aria-current="true"' : ""}>
         ${dot(item.dot || "idle")}
-        <span class="row-title">${escapeHtml(item.title)}</span>
+        <span class="row-title" lang="${contentLang(item.title)}">${escapeHtml(item.title)}</span>
         <span class="meta">${escapeHtml(item.meta)}</span>
         ${item.attention ? `<span class="attention ${item.attentionClass || ""}">${escapeHtml(item.attention)}</span>` : ""}
       </button>`;
     }
 
     function staleBand() {
-      return state.connection === "online" ? "" : '<div class="stale-band"><span>STALE · 4M</span><span>RETRYING 08</span></div>';
+      if (state.compatibility === "limited") return '<div class="stale-band"><span>LIMITED</span><span>READ ONLY</span></div>';
+      if (state.connection === "online") return "";
+      const copy = {
+        connecting: ["RECONNECTING", "CONNECTING RELAY"],
+        syncing: ["RECONNECTING", "VERIFYING DATA"],
+        stale: ["STALE · 4M", "RETRYING 08"],
+        "auth-required": ["AUTH REQUIRED", "READ ONLY"]
+      }[state.connection] || [state.connection.toUpperCase(), "READ ONLY"];
+      return `<div class="stale-band"><span>${copy[0]}</span><span>${copy[1]}</span></div>`;
     }
 
     function viewClasses(base = "view") {
-      return `${base}${state.connection === "online" ? "" : " has-stale"}`;
+      return `${base}${state.connection === "online" && state.compatibility !== "limited" ? "" : " has-stale"}`;
+    }
+
+    function workspaceById(id) {
+      return workspaces.find(workspace => workspace.id === id);
+    }
+
+    function findAgent(agentId) {
+      for (const workspace of workspaces) {
+        const root = workspace.agents.find(agent => agent.id === agentId);
+        if (root) return { workspace, agent: root, parent: null };
+        for (const parent of workspace.agents) {
+          const child = parent.subagents?.find(agent => agent.id === agentId);
+          if (child) return { workspace: workspaceById(child.executionWorkspaceId) || workspace, agent: child, parent, parentWorkspace: workspace };
+        }
+      }
+      return null;
+    }
+
+    function draftMatchesActiveAgent() {
+      if (!state.draft) return true;
+      return state.draft.target.host === state.activeWorkspace.host
+        && state.draft.target.workspaceId === state.activeWorkspace.id
+        && state.draft.target.agentId === state.activeAgent.id;
+    }
+
+    function cloneDraft(draft) {
+      return draft ? { target: { ...draft.target }, text: draft.text } : null;
+    }
+
+    function wipeSensitiveState() {
+      state.grant = { status: "revoked", host: null, scopes: [] };
+      state.deviceSession = { status: "invalid", host: null };
+      state.draft = null;
+      state.preDictationDraft = null;
+      state.pendingCommandId = null;
+      state.pendingStop = null;
+      state.activeParentAgent = null;
+      state.notice = null;
+      state.voicePhase = null;
+      state.composerPhase = "review";
+      state.hasSnapshot = false;
+    }
+
+    function enterAuthRequired() {
+      wipeSensitiveState();
+      state.connection = "auth-required";
+      state.view = "auth-required";
+      state.selected = 0;
+    }
+
+    function enterSecurityBlocked() {
+      wipeSensitiveState();
+      state.connection = "auth-required";
+      state.view = "security-blocked";
+      state.selected = 0;
     }
 
     function homeItems() {
+      const attentionRank = { permission: 0, error: 1, finished: 2 };
+      const attentionItems = [];
+      const seenAttention = new Set();
+      workspaces.forEach(parentWorkspace => parentWorkspace.agents.forEach(root => {
+        [root, ...(root.subagents || [])].forEach(agent => {
+          if (!(agent.attention in attentionRank)) return;
+          const identity = `${parentWorkspace.host}:${agent.id}:${agent.attentionVersion || agent.attention}`;
+          if (seenAttention.has(identity)) return;
+          seenAttention.add(identity);
+          const workspace = agent.executionWorkspaceId ? workspaceById(agent.executionWorkspaceId) : parentWorkspace;
+          attentionItems.push({
+            type: "attention", workspace, parent: agent.parentAgentId ? root : null, agent,
+            title: `${agent.attention === "permission" ? "Permission" : agent.attention === "error" ? "Error" : "Finished"} · ${agent.title}`,
+            meta: `${workspace.project.toUpperCase()} / ${workspace.title.toUpperCase()} · ${agent.age || "NOW"}${agent.parentAgentId ? ` · PARENT ${root.title.toUpperCase()}` : ""}`,
+            dot: agent.attention === "error" ? "error" : agent.attention,
+            attention: agent.attention === "permission" ? "REVIEW" : agent.attention === "error" ? "FAILED" : "FINISHED",
+            attentionClass: agent.attention === "error" ? "failed" : "",
+            rank: attentionRank[agent.attention]
+          });
+        });
+      }));
       return [
-        { type: "attention", workspace: workspaces[0], agent: workspaces[0].agents[0], title: "Permission · Release auth fix", meta: "PASEO / MOBILE APP · NOW", dot: "permission", attention: "REVIEW" },
+        ...attentionItems.sort((a, b) => a.rank - b.rank),
+        ...(state.attentionOverflow > 0 ? [{
+          type: "attention-more",
+          title: `More Attention in Paseo · ${state.attentionOverflow}`,
+          meta: "CONTINUATION READY · LOAD NEXT PAGE",
+          dot: "initializing",
+          attention: "MORE"
+        }] : []),
         ...workspaces.map(workspace => ({
           type: "workspace",
           workspace,
           title: workspace.title,
-          meta: `${workspace.project.toUpperCase()} · ${workspace.aggregate} · ${workspace.age}`,
-          dot: workspace.aggregate === "RUNNING" ? "running" : workspace.aggregate === "ERROR" ? "error" : "idle",
+          meta: `${workspace.project.toUpperCase()} · ${workspace.status.toUpperCase()} · ${workspace.age}`,
+          dot: workspace.status === "running" ? "running" : workspace.status === "failed" ? "error" : workspace.status === "needs_input" ? "permission" : "idle",
           attention: workspace.attention,
           attentionClass: workspace.attention === "FAILED" ? "failed" : ""
         }))
@@ -612,39 +796,49 @@
 
     function homeView() {
       const items = homeItems();
-      const visible = items.slice(0, 4);
+      const start = Math.max(0, Math.min(state.selected - 3, items.length - 4));
+      const visible = items.slice(start, start + 4);
       return `<section class="${viewClasses("view no-rail")}" aria-label="Paseo home">
         <div class="brand-rule"></div>
         ${header("PASEO", "STUDIO")}
-        <div class="content list" role="listbox" aria-label="Attention and workspaces">
+        <div class="content list" role="navigation" aria-label="Attention and workspaces">
           <div class="section-label"><span>NEEDS ATTENTION + WORKSPACES</span><span>${state.selected + 1}/${items.length}</span></div>
-          ${visible.map((item, index) => row(item, index)).join("")}
+          ${visible.map((item, index) => row(item, index + start)).join("")}
         </div>
         ${staleBand()}
       </section>`;
     }
 
     function workspaceItems() {
+      const roots = state.activeWorkspace.agents.map(agent => ({
+        type: "agent", agent, title: agent.title,
+        meta: `${agent.provider} · ${agent.lifecycle.toUpperCase()} · ROOT`,
+        dot: agent.lifecycle,
+        attention: agent.attention === "permission" ? "REVIEW" : agent.attention === "error" ? "FAILED" : agent.attention === "finished" ? "FINISHED" : null,
+        attentionClass: agent.attention === "error" ? "failed" : agent.attention === "finished" ? "input" : ""
+      }));
+      const related = state.activeWorkspace.relatedSubagents.map(agent => ({
+        type: "related", agent, title: agent.title,
+        meta: `${agent.provider} · ${agent.lifecycle.toUpperCase()} · PARENT MOBILE APP`,
+        dot: agent.lifecycle,
+        attention: "RELATED"
+      }));
       return [
         { type: "back", title: "Back to Home", meta: `${state.activeWorkspace.project.toUpperCase()} · ${state.activeWorkspace.host.toUpperCase()}`, dot: "back" },
-        ...state.activeWorkspace.agents.map(agent => ({
-          type: "agent", agent, title: agent.title,
-          meta: `${agent.provider} · ${agent.lifecycle.toUpperCase()} · ${agent.relation}`,
-          dot: agent.lifecycle,
-          attention: agent.attention === "permission" ? "REVIEW" : agent.attention === "failed" ? "FAILED" : agent.attention === "finished" ? "FINISHED" : null,
-          attentionClass: agent.attention === "failed" ? "failed" : agent.attention === "finished" ? "input" : ""
-        }))
+        ...roots,
+        ...related
       ];
     }
 
     function workspaceView() {
       const items = workspaceItems();
+      const visible = visibleWindow(items, state.selected, 4);
       return `<section class="${viewClasses("view no-rail")}" aria-label="Workspace agents">
         <div class="brand-rule"></div>
-        ${header(state.activeWorkspace.title, state.activeWorkspace.aggregate)}
-        <div class="content list" role="listbox" aria-label="Workspace agents">
-          <div class="section-label"><span>${escapeHtml(state.activeWorkspace.project.toUpperCase())}</span><span>${state.selected + 1}/${items.length}</span></div>
-          ${items.slice(0, 4).map((item, index) => row(item, index)).join("")}
+        ${header(state.activeWorkspace.title, state.activeWorkspace.status.toUpperCase())}
+        <div class="content list" role="navigation" aria-label="Workspace agents">
+          <div class="section-label"><span>${escapeHtml(state.activeWorkspace.project.toUpperCase())}${state.activeWorkspace.relatedSubagents.length ? ` · RELATED ${state.activeWorkspace.relatedSubagents.length}` : " · ROOT AGENTS"}</span><span>${state.selected + 1}/${items.length}</span></div>
+          ${visible.items.map((item, index) => row(item, index + visible.start)).join("")}
         </div>
         ${staleBand()}
       </section>`;
@@ -667,7 +861,9 @@
     function agentView() {
       const agent = state.activeAgent;
       const events = timelineItems();
-      const attentionLabel = agent.attention === "permission" ? "REVIEW" : agent.attention === "failed" ? "FAILED" : agent.attention === "finished" ? "FINISHED" : "";
+      const visible = visibleWindow(events, state.timelineFocus, 3);
+      const attentionLabel = agent.attention === "permission" ? "REVIEW" : agent.attention === "error" ? "FAILED" : agent.attention === "finished" ? "FINISHED" : "";
+      const contextMeta = state.activeParentAgent ? `PARENT ${state.activeParentAgent.title.toUpperCase()}` : state.activeWorkspace.project.toUpperCase();
       return `<section class="${viewClasses()}" aria-label="Agent timeline">
         <div class="brand-rule"></div>
         ${header(agent.title, state.activeWorkspace.title.toUpperCase())}
@@ -676,11 +872,11 @@
             ${dot(agent.lifecycle)}
             <span class="status-label">${agent.lifecycle.toUpperCase()} · ${agent.relation}</span>
             <span class="step-count">${agent.lifecycle === "running" ? "2/3" : "3/4"}</span>
-            <span class="meta">${agent.provider} · ${state.activeWorkspace.project.toUpperCase()}</span>
+            <span class="meta">${agent.provider} · ${escapeHtml(contextMeta)}</span>
             <span class="status-attention">${attentionLabel}</span>
           </div>
           <div class="timeline" role="listbox" aria-label="Projected timeline">
-            ${events.slice(0, 3).map((event, index) => `<article class="timeline-item ${index === state.timelineFocus ? "selected" : ""}" data-timeline="${index}" role="option" aria-selected="${index === state.timelineFocus}"><div class="eyebrow">${event.label}</div><p class="timeline-text">${escapeHtml(event.text)}</p></article>`).join("")}
+            ${visible.items.map((event, index) => { const actual = index + visible.start; return `<article id="timeline-${actual}" class="timeline-item ${actual === state.timelineFocus ? "selected" : ""}" data-timeline="${actual}" role="option" tabindex="-1" aria-selected="${actual === state.timelineFocus}"><div class="eyebrow">${event.label}</div><p class="timeline-text" lang="${contentLang(event.text)}">${escapeHtml(event.text)}</p></article>`; }).join("")}
           </div>
         </div>
         <footer class="action-rail"><button class="action selected" data-command="actions">ACTIONS</button></footer>
@@ -690,130 +886,242 @@
     }
 
     function actionItems() {
-      const items = [{ type: "back", title: "Back to timeline", meta: `${state.activeWorkspace.title.toUpperCase()} / ${state.activeAgent.provider}`, dot: "back" }];
-      if (state.connection !== "online") {
-        items.push({ type: "unavailable", title: "Actions unavailable", meta: "STALE · RECONNECT TO ACT", dot: "initializing" });
+      const originLabel = state.agentOrigin.view === "home" ? "Home" : state.agentOrigin.view === "subagents" ? "Subagents" : "Workspace";
+      const items = [{ type: "back", title: `Back to ${originLabel}`, meta: `${state.activeWorkspace.title.toUpperCase()} / ${state.activeAgent.provider}`, dot: "back" }];
+      if (state.activeAgent.subagents?.length) items.push({ type: "subagents", title: `Subagents · ${state.activeAgent.subagents.length}`, meta: "PARENT RELATIONSHIP HOME", dot: "idle" });
+      if (state.activeAgent.attention === "permission") {
+        items.push({ type: "permission", title: "Review permission", meta: "READ ONLY · CONTINUE IN PASEO", dot: "permission", attention: "REVIEW" });
         return items;
       }
-      if (!state.activeAgent.readOnly) items.push({ type: "followup", title: "Follow up", meta: "COMPOSER DICTATION OR KEYBOARD", dot: "idle" });
-      if (state.activeAgent.attention === "permission") {
-        const permission = permissionModel();
-        items.push({ type: "permission", title: "Review permission", meta: permission.supported ? `${permission.schema.toUpperCase()} · FULL DETAILS` : "UNSUPPORTED · OPEN PASEO", dot: "permission", attention: "REVIEW" });
+      if (state.activeAgent.readOnly) {
+        items.push({ type: "unavailable", title: "Controlled actions unavailable", meta: "NATIVE SUBAGENT · READ ONLY", dot: "idle" });
+        return items;
       }
-      if (state.activeAgent.lifecycle === "running" && !state.activeAgent.readOnly) items.push({ type: "stop", title: "Stop current turn", meta: "REQUIRES CONFIRMATION", dot: "error" });
+      if (state.draft && !draftMatchesActiveAgent()) {
+        const bound = findAgent(state.draft.target.agentId);
+        items.push({ type: "draft-return", title: "Draft saved for another Agent", meta: `RETURN TO ${bound?.agent.title.toUpperCase() || "BOUND TARGET"}`, dot: "input" });
+        items.push({ type: "draft-discard", title: "Discard saved Draft", meta: "EXPLICIT · CANNOT UNDO", dot: "error" });
+        return items;
+      }
+      const followUpGate = controlledActionGate("follow-up");
+      if (["idle", "running"].includes(state.activeAgent.lifecycle) && followUpGate.enabled) {
+        items.push({ type: "followup", title: "Follow up", meta: "HOLD TO DICTATE · REVIEW", dot: "idle" });
+      } else if (["idle", "running"].includes(state.activeAgent.lifecycle)) {
+        items.push({ type: "unavailable", title: "Controlled actions unavailable", meta: followUpGate.reason, dot: "initializing" });
+      }
+      const stopGate = controlledActionGate("stop");
+      if (state.activeAgent.lifecycle === "running" && state.stopContract && stopGate.enabled) items.push({ type: "stop", title: "Stop current turn", meta: `TURN ${state.activeAgent.turnId || "CURRENT"} · CONFIRM`, dot: "error" });
       return items;
+    }
+
+    function controlledActionGate(scope) {
+      if (state.connection !== "online") return { enabled: false, reason: `${state.connection.toUpperCase()} · RECONNECT TO ACT` };
+      if (!state.testedFirmware || state.compatibility !== "tested") return { enabled: false, reason: "UNTESTED FIRMWARE · READ ONLY" };
+      if (state.grant.status !== "active") return { enabled: false, reason: "DEVICE GRANT REQUIRED" };
+      if (state.grant.host !== state.activeWorkspace.host) return { enabled: false, reason: "GRANT HOST MISMATCH" };
+      if (!state.deviceLock) return { enabled: false, reason: "DEVICE LOCK REQUIRED" };
+      if (!state.grant.scopes.includes(scope)) return { enabled: false, reason: `${scope.toUpperCase()} SCOPE REQUIRED` };
+      if (state.deviceSession.status !== "active" || state.deviceSession.host !== state.activeWorkspace.host) return { enabled: false, reason: "SESSION RECHECK REQUIRED" };
+      if (state.activeAgent.readOnly) return { enabled: false, reason: "NATIVE SUBAGENT · READ ONLY" };
+      return { enabled: true, reason: "" };
     }
 
     function actionsView() {
       const items = actionItems();
+      const visible = visibleWindow(items, state.selected, state.connection === "online" ? 4 : 3);
       return `<section class="${viewClasses("view no-rail")}" aria-label="Agent actions">
         <div class="brand-rule"></div>
         ${header("ACTIONS", state.activeAgent.provider)}
         ${staleBand()}
-        <div class="content list" role="listbox" aria-label="Agent actions">
+        <div class="content list" role="navigation" aria-label="Agent actions">
           <div class="section-label"><span>${escapeHtml(state.activeAgent.title.toUpperCase())}</span><span>${state.selected + 1}/${items.length}</span></div>
-          ${items.map((item, index) => row(item, index)).join("")}
+          ${visible.items.map((item, index) => row(item, index + visible.start)).join("")}
+        </div>
+      </section>`;
+    }
+
+    function subagentItems() {
+      return [
+        { type: "back", title: "Back to Actions", meta: state.activeAgent.title.toUpperCase(), dot: "back" },
+        ...state.activeAgent.subagents.map(agent => {
+          const execution = workspaces.find(workspace => workspace.id === agent.executionWorkspaceId);
+          return {
+            type: "subagent",
+            agent,
+            title: agent.title,
+            meta: execution ? `RUNS IN ${execution.title.toUpperCase()} · ${agent.relation}` : agent.relation,
+            dot: agent.lifecycle,
+            attention: agent.attention === "finished" ? "FINISHED" : null,
+            attentionClass: "input"
+          };
+        })
+      ];
+    }
+
+    function subagentsView() {
+      const items = subagentItems();
+      const visible = visibleWindow(items, state.selected, state.connection === "online" ? 4 : 3);
+      return `<section class="${viewClasses("view no-rail")}" aria-label="Parent Agent subagents">
+        <div class="brand-rule"></div>
+        ${header("SUBAGENTS", state.activeAgent.provider)}
+        ${staleBand()}
+        <div class="content list" role="navigation" aria-label="Subagents">
+          <div class="section-label"><span>PARENT · ${escapeHtml(state.activeAgent.title.toUpperCase())}</span><span>${state.selected + 1}/${items.length}</span></div>
+          ${visible.items.map((item, index) => row(item, index + visible.start)).join("")}
         </div>
       </section>`;
     }
 
     function permissionView() {
       const permission = permissionModel();
-      if (!permission.supported) {
-        return `<section class="${viewClasses()}" aria-label="Unsupported permission">
-          <div class="brand-rule"></div>
-          ${header("PERMISSION", "UNSUPPORTED")}
-          ${staleBand()}
-          <div class="content decision-body">
-            <div class="eyebrow">PROVIDER QUESTION</div>
-            <h1 class="decision-title">Continue in full Paseo</h1>
-            <p class="decision-copy">This request contains editor input and truncated details. It cannot be answered safely on Rabbit R1.</p>
-            <div class="context-line">STUDIO / PASEO / MOBILE APP</div>
-          </div>
-          ${rail([{ label: "BACK" }, { label: "OPEN PASEO" }])}
-        </section>`;
-      }
-      if (permission.schema === "select") {
-        return `<section class="${viewClasses()}" aria-label="Permission selection">
-          <div class="brand-rule"></div>
-          ${header("PERMISSION", "SELECT · FULL")}
-          ${staleBand()}
-          <div class="content decision-body">
-            <div class="eyebrow">COMMAND SCOPE</div>
-            <h1 class="decision-title">Choose access for this command</h1>
-            <div class="decision-target">${escapeHtml(permission.target)}</div>
-            <p class="decision-copy">Select one complete provider option.</p>
-            <div class="context-line">STUDIO / PASEO / MOBILE APP</div>
-          </div>
-          ${rail([{ label: "BACK" }, ...permission.options.map(label => ({ label: label.toUpperCase(), disabled: state.connection !== "online" }))])}
-        </section>`;
-      }
-      return `<section class="${viewClasses()}" aria-label="Permission decision">
+      const parentContext = state.activeParentAgent ? ` / PARENT ${state.activeParentAgent.title.toUpperCase()}` : "";
+      return `<section class="${viewClasses()}" aria-label="Permission handoff">
         <div class="brand-rule"></div>
-        ${header("PERMISSION", "CONFIRM · FULL")}
+        ${header("PERMISSION", "READ ONLY")}
         ${staleBand()}
         <div class="content decision-body">
-          <div class="eyebrow">RUN COMMAND</div>
+          <div class="eyebrow">${escapeHtml(permission.kind)} · SHAPE ${escapeHtml(permission.shapeCompleteness)}</div>
           <h1 class="decision-title">${escapeHtml(permission.title)}</h1>
           <div class="decision-target">${escapeHtml(permission.target)}</div>
-          <p class="decision-copy">Requested by Release auth fix. No details are truncated.</p>
-          <div class="context-line">STUDIO / PASEO / MOBILE APP</div>
+          <p class="decision-copy">${escapeHtml(permission.summary)}</p>
+          <div class="context-line">DETAILS ${escapeHtml(permission.detailCompleteness)} · CONTINUE IN PASEO</div>
+          <div class="context-line">${escapeHtml(state.activeWorkspace.host.toUpperCase())} / ${escapeHtml(state.activeWorkspace.project.toUpperCase())} / ${escapeHtml(state.activeWorkspace.title.toUpperCase())} / ${escapeHtml(state.activeAgent.title.toUpperCase())}${escapeHtml(parentContext)}</div>
         </div>
-        ${rail([{ label: "BACK" }, { label: "DENY", disabled: state.connection !== "online" }, { label: "APPROVE", disabled: state.connection !== "online" }])}
+        ${rail([{ label: "BACK" }])}
       </section>`;
     }
 
     function permissionModel() {
-      const permission = state.activeAgent.permission;
-      if (!permission || !permission.complete) return { schema: permission?.schema || "unknown", supported: false };
-      const hasTarget = typeof permission.target === "string" && permission.target.trim().length > 0;
-      const hasTitle = typeof permission.title === "string" && permission.title.trim().length > 0;
-      if (permission.schema === "confirm" && hasTitle && hasTarget) return { ...permission, supported: true };
-      const hasFixedOptions = Array.isArray(permission.options)
-        && permission.options.length > 0
-        && permission.options.length <= 2
-        && permission.options.every(option => typeof option === "string" && option.trim().length > 0);
-      if (permission.schema === "select" && hasTarget && hasFixedOptions) return { ...permission, supported: true };
-      return { ...permission, supported: false };
+      return state.activeAgent.permission || {
+        kind: "UNKNOWN",
+        shapeCompleteness: "UNAVAILABLE",
+        detailCompleteness: "UNAVAILABLE",
+        title: "Permission details unavailable",
+        target: "Open the trusted full Paseo client.",
+        summary: "Rabbit R1 cannot decide Permission requests."
+      };
     }
 
     function stopView() {
-      if (state.view === "stopping") return pendingView("STOPPING", "WAITING FOR PROVIDER ACKNOWLEDGEMENT");
+      if (state.view === "stopping") return pendingView("STOPPING", `VERIFYING TURN ${state.activeAgent.turnId || "CURRENT"}`);
+      const stopGate = controlledActionGate("stop");
       return `<section class="${viewClasses()}" aria-label="Stop confirmation">
         <div class="brand-rule"></div>
         ${header("STOP TURN", state.activeAgent.provider)}
         ${staleBand()}
         <div class="content decision-body">
-          <div class="eyebrow">DESTRUCTIVE ACTION</div>
+          <div class="eyebrow">EXACT TURN · ${escapeHtml(state.activeAgent.turnId || "CURRENT")}</div>
           <h1 class="decision-title">Stop ${escapeHtml(state.activeAgent.title)}?</h1>
-          <p class="decision-copy">The session remains running until the provider acknowledges the interrupt.</p>
+          <p class="decision-copy">${stopGate.enabled ? "Only this confirmed turn will stop. A newer turn is never affected." : stopGate.reason}</p>
           <div class="context-line">${escapeHtml(state.activeWorkspace.project.toUpperCase())} / ${escapeHtml(state.activeWorkspace.title.toUpperCase())}</div>
         </div>
-        ${rail([{ label: "BACK" }, { label: "CANCEL" }, { label: "STOP", danger: true, disabled: state.connection !== "online" }])}
+        ${rail([{ label: "BACK" }, { label: "CANCEL" }, { label: "STOP", danger: true, disabled: !stopGate.enabled }])}
       </section>`;
     }
 
     function composerView() {
       if (state.composerPhase === "sending") return pendingView("SENDING", "WAITING FOR SERVER ACKNOWLEDGEMENT");
+      if (state.composerPhase === "accepted") return pendingView("ACCEPTED", `AWAITING TIMELINE ${state.pendingCommandId || "CONFIRMATION"}`);
+      if (state.composerPhase === "unknown") return pendingView("UNKNOWN", `RECONCILING ${state.pendingCommandId || "COMMAND RESULT"}`);
       const meta = state.composerPhase === "failed"
         ? "SEND FAILED · DRAFT KEPT"
         : state.composerPhase === "voice-failed"
           ? "DICTATION FAILED · DRAFT KEPT"
           : "REVIEW BEFORE SEND";
+      const pages = paginateText(state.draft?.text || "");
+      state.composerPage = Math.max(0, Math.min(state.composerPage, pages.length - 1));
+      const actions = composerActions(pages);
+      const targetAvailable = Boolean(state.draft && findAgent(state.draft.target.agentId));
       return `<section class="${viewClasses()}" aria-label="Follow-up composer">
         <div class="brand-rule"></div>
         ${header("FOLLOW UP", "DICTATION")}
         ${staleBand()}
         <div class="content composer">
-          <textarea class="transcript" aria-label="Follow-up message">${escapeHtml(state.draft)}</textarea>
-          <div class="composer-meta"><span>${meta}</span><span>${state.draft.length}/280</span></div>
+          <div class="draft-target"><span>TO · ${escapeHtml(state.activeAgent.title.toUpperCase())}</span><span>${escapeHtml(state.draft.target.host.toUpperCase())} / ${escapeHtml(state.activeWorkspace.title.toUpperCase())}</span></div>
+          <div class="transcript" role="textbox" aria-readonly="true" aria-label="Follow-up transcript page ${state.composerPage + 1} of ${pages.length}" lang="${contentLang(pages[state.composerPage])}">${escapeHtml(pages[state.composerPage])}</div>
+          <div class="composer-meta"><span>${targetAvailable ? meta : "TARGET UNAVAILABLE · DRAFT KEPT"}</span><span>${state.composerPage + 1}/${pages.length} · ${state.draft.text.length}/280</span></div>
         </div>
-        ${rail([{ label: "BACK" }, { label: "EDIT" }, { label: "SEND", disabled: state.connection !== "online" }])}
+        ${rail(actions)}
       </section>`;
+    }
+
+    function composerActions(pages = paginateText(state.draft?.text || "")) {
+      const first = state.composerPage === 0;
+      const last = state.composerPage === pages.length - 1;
+      const actions = [];
+      if (!first) actions.push({ label: "BACK", type: "page-back" });
+      actions.push({ label: "CANCEL", type: "cancel" });
+      if (!last) actions.push({ label: "NEXT", type: "page-next" });
+      if (last && state.composerVisitedMax >= pages.length - 1) actions.push({
+        label: "SEND",
+        type: "send",
+        disabled: !state.draft?.text.trim() || !findAgent(state.draft.target.agentId) || !controlledActionGate("follow-up").enabled
+      });
+      return actions;
     }
 
     function pendingView(title, copy) {
       return `<section class="${viewClasses("view no-rail")}" aria-label="${title}"><div class="brand-rule"></div>${header(title)}${staleBand()}<div class="content pending"><span class="pending-mark" aria-hidden="true"></span><div class="pending-title">${title}</div><div class="pending-copy">${copy}</div></div></section>`;
+    }
+
+    function unsupportedView() {
+      return `<section class="view" aria-label="Unsupported firmware">
+        <div class="brand-rule"></div>
+        <header class="header"><div class="header-title">PASEO</div><div class="header-meta stale">UNSUPPORTED</div></header>
+        <div class="content decision-body">
+          <div class="eyebrow">FIRMWARE BLOCKED</div>
+          <h1 class="decision-title">Update required</h1>
+          <p class="decision-copy">This RabbitOS version cannot guarantee Relay identity or data integrity. No Paseo data was loaded.</p>
+          <div class="context-line">TESTED FIRMWARE ONLY</div>
+        </div>
+        ${rail([{ label: "PAIR AGAIN" }])}
+      </section>`;
+    }
+
+    function orientationView() {
+      return `<section class="view" aria-label="Unsupported orientation"><div class="brand-rule"></div><header class="header"><div class="header-title">PASEO</div><div class="header-meta stale">ROTATE R1</div></header><div class="content pending"><span class="pending-mark" aria-hidden="true"></span><div class="pending-title">PORTRAIT REQUIRED</div><div class="pending-copy">RETURN THE DEVICE TO 240 × 282</div></div></section>`;
+    }
+
+    function pairingView() {
+      const phases = {
+        unpaired: ["UNPAIRED", "Enter enrollment code", "Generate a one-time code in a trusted full Paseo client, then verify the same words on both devices."],
+        pairing: ["PAIRING", "Waiting for approval", "Confirm the matching verification words in trusted Paseo. R1 will keep checking for a bounded time."],
+        failed: ["PAIR FAILED", "Approval not completed", "The code expired, was denied, or did not match. No grant or partial credential was kept."],
+        paired: ["PAIRED", "Host verified", "The Device grant is active. Paseo is checking firmware, lock, compatibility, and initial synchronization."]
+      };
+      const phase = phases[state.pairingPhase] || phases.unpaired;
+      const actions = state.pairingPhase === "unpaired"
+        ? [{ label: "ENTER CODE" }]
+        : state.pairingPhase === "pairing"
+          ? [{ label: "BACK" }]
+          : state.pairingPhase === "failed"
+            ? [{ label: "PAIR AGAIN" }]
+            : [{ label: "CONTINUE" }];
+      return `<section class="view" aria-label="Device enrollment"><div class="brand-rule"></div><header class="header"><div class="header-title">PAIR R1</div><div class="header-meta stale">${phase[0]}</div></header><div class="content decision-body"><div class="eyebrow">TRUSTED PASEO REQUIRED</div><h1 class="decision-title">${phase[1]}</h1><p class="decision-copy">${phase[2]}</p><div class="context-line">5 MINUTES · ONE HOST · NO COMMAND AUTHORITY</div></div>${rail(actions)}</section>`;
+    }
+
+    function discardDraftView() {
+      const bound = state.draft ? findAgent(state.draft.target.agentId) : null;
+      return `<section class="${viewClasses()}" aria-label="Discard Draft confirmation"><div class="brand-rule"></div>${header("DISCARD DRAFT", "CONFIRM")}<div class="content decision-body"><div class="eyebrow">BOUND TO ${escapeHtml(bound?.agent.title.toUpperCase() || "UNAVAILABLE AGENT")}</div><h1 class="decision-title">Discard saved Draft?</h1><p class="decision-copy">This removes the unsent text only. It never cancels or changes an Agent.</p><div class="context-line">CANNOT UNDO</div></div>${rail([{ label: "CANCEL" }, { label: "DISCARD", danger: true }])}</section>`;
+    }
+
+    function firstLoadView() {
+      return `<section class="view no-rail has-stale" aria-label="Initial synchronization"><div class="brand-rule"></div>${header("PASEO")}<div class="stale-band"><span>RECONNECTING</span><span>NO CACHE</span></div><div class="content pending"><span class="pending-mark" aria-hidden="true"></span><div class="pending-title">SYNCING DIRECTORY</div><div class="pending-copy">NO PASEO DATA IS SHOWN YET</div></div></section>`;
+    }
+
+    function authorizationView(kind) {
+      const blocked = kind === "security-blocked";
+      return `<section class="view" aria-label="${blocked ? "Security blocked" : "Authentication required"}">
+        <div class="brand-rule"></div>
+        <header class="header"><div class="header-title">PASEO</div><div class="header-meta stale">${blocked ? "SECURITY BLOCKED" : "AUTH REQUIRED"}</div></header>
+        <div class="content decision-body">
+          <div class="eyebrow">${blocked ? "DEVICE LOCK REQUIRED" : "DEVICE REVOKED"}</div>
+          <h1 class="decision-title">${blocked ? "Secure this R1" : "Pair again"}</h1>
+          <p class="decision-copy">Sensitive Paseo data, Device grant, session, and Draft have been cleared.</p>
+          <div class="context-line">TRUSTED PASEO REQUIRED</div>
+        </div>
+        ${rail([{ label: blocked ? "CHECK AGAIN" : "PAIR AGAIN" }])}
+      </section>`;
     }
 
     function voiceOverlay() {
@@ -822,12 +1130,24 @@
     }
 
     function render() {
-      const renderers = { home: homeView, workspace: workspaceView, agent: agentView, actions: actionsView, permission: permissionView, stop: stopView, stopping: stopView, composer: composerView };
-      let html = (renderers[state.view] || homeView)();
+      const renderers = { home: homeView, workspace: workspaceView, agent: agentView, actions: actionsView, subagents: subagentsView, permission: permissionView, stop: stopView, stopping: stopView, composer: composerView, pairing: pairingView, "discard-draft": discardDraftView };
+      const compactLandscape = matchMedia("(orientation: landscape) and (max-height: 420px)").matches;
+      let html = compactLandscape
+        ? orientationView()
+        : state.compatibility === "unsupported"
+          ? unsupportedView()
+          : ["auth-required", "security-blocked"].includes(state.view)
+            ? authorizationView(state.view)
+            : !state.hasSnapshot && ["connecting", "syncing"].includes(state.connection)
+              ? firstLoadView()
+              : (renderers[state.view] || homeView)();
       if (state.voicePhase) html += voiceOverlay();
       if (state.toast) html += `<div class="toast" role="status">${escapeHtml(state.toast)}</div>`;
+      html += `<div class="sr-only" aria-live="polite">${escapeHtml(state.view)} · item ${state.selected + 1}</div>`;
       app.innerHTML = html;
       app.focus({ preventScroll: true });
+      const activeId = state.view === "agent" ? `timeline-${state.timelineFocus}` : app.querySelector(".selected")?.id;
+      if (activeId) app.setAttribute("aria-activedescendant", activeId); else app.removeAttribute("aria-activedescendant");
       bindEvents();
     }
 
@@ -842,25 +1162,25 @@
         if (state.selected === index) activate(); else { state.selected = index; render(); }
       }));
       app.querySelector("[data-command='actions']")?.addEventListener("click", openActions);
-      const textarea = app.querySelector(".transcript");
-      if (textarea) textarea.addEventListener("input", event => { state.draft = event.target.value.slice(0, 280); });
     }
 
     function currentItems() {
       if (state.view === "home") return homeItems();
       if (state.view === "workspace") return workspaceItems();
       if (state.view === "actions") return actionItems();
-      if (state.view === "permission") {
-        const permission = permissionModel();
-        if (!permission.supported) return [0, 1];
-        return permission.schema === "select" ? [0, ...permission.options.map((_, index) => index + 1)] : [0, 1, 2];
-      }
-      if (state.view === "stop" || state.view === "composer") return [0, 1, 2];
+      if (state.view === "subagents") return subagentItems();
+      if (state.view === "permission") return [0];
+      if (state.view === "stop") return [0, 1, 2];
+      if (state.view === "composer") return composerActions();
+      if (state.view === "pairing") return [0];
+      if (state.view === "discard-draft") return [0, 1];
+      if (["auth-required", "security-blocked"].includes(state.view) || state.compatibility === "unsupported") return [0];
       return [];
     }
 
     function move(delta) {
-      if (state.voicePhase || state.view === "stopping" || state.composerPhase === "sending") return;
+      if (state.voicePhase || state.view === "stopping" || ["sending", "accepted", "unknown"].includes(state.composerPhase)) return;
+      if (!state.hasSnapshot && ["connecting", "syncing"].includes(state.connection) && state.view !== "pairing") return;
       if (state.view === "agent") {
         const max = timelineItems().length - 1;
         state.timelineFocus = Math.max(0, Math.min(max, state.timelineFocus + delta));
@@ -872,12 +1192,16 @@
     }
 
     function activate() {
+      if (!state.hasSnapshot && ["connecting", "syncing"].includes(state.connection) && state.view !== "pairing") return;
       if (state.view === "agent") { openActions(); return; }
       if (state.view === "home") {
         const item = homeItems()[state.selected];
+        if (item.type === "attention-more") return showToast("LOADING NEXT ATTENTION PAGE", "home");
         state.activeWorkspace = item.workspace;
         if (item.type === "attention") {
           state.activeAgent = item.agent;
+          state.activeParentAgent = item.parent || null;
+          state.agentOrigin = { view: "home", workspaceId: item.workspace.id };
           state.view = "agent";
           state.timelineFocus = 0;
         } else {
@@ -888,30 +1212,79 @@
         const item = workspaceItems()[state.selected];
         if (item.type === "back") return goBack();
         state.activeAgent = item.agent;
+        state.activeParentAgent = item.type === "related" ? findAgent(item.agent.id)?.parent || null : null;
+        state.agentOrigin = { view: "workspace", workspaceId: state.activeWorkspace.id };
         state.view = "agent";
         state.timelineFocus = 0;
       } else if (state.view === "actions") {
         const item = actionItems()[state.selected];
         if (item.type === "back") return goBack();
         if (item.type === "unavailable") return;
-        if (item.type === "followup") { state.view = "composer"; state.selected = 1; state.composerPhase = "review"; }
-        if (item.type === "permission") { state.view = "permission"; state.selected = 1; }
+        if (item.type === "subagents") { state.view = "subagents"; state.selected = 0; }
+        if (item.type === "draft-return") return openBoundDraft();
+        if (item.type === "draft-discard") {
+          state.view = "discard-draft";
+          state.selected = 0;
+        }
+        if (item.type === "followup") return enterComposerForActiveAgent();
+        if (item.type === "permission") { state.view = "permission"; state.selected = 0; }
         if (item.type === "stop") { state.view = "stop"; state.selected = 1; }
+      } else if (state.view === "subagents") {
+        const item = subagentItems()[state.selected];
+        if (item.type === "back") { state.view = "actions"; state.selected = 0; }
+        if (item.type === "subagent") {
+          const parent = state.activeAgent;
+          const parentWorkspace = state.activeWorkspace;
+          state.activeAgent = item.agent;
+          state.activeParentAgent = parent;
+          state.activeWorkspace = workspaceById(item.agent.executionWorkspaceId) || parentWorkspace;
+          state.agentOrigin = { view: "subagents", workspaceId: parentWorkspace.id, parentAgentId: parent.id };
+          state.view = "agent";
+          state.timelineFocus = 0;
+        }
       } else if (state.view === "permission") {
-        if (state.selected === 0) return goBack();
-        if (state.connection !== "online") return;
-        const permission = permissionModel();
-        if (!permission.supported) return showToast("OPEN ON A FULL PASEO CLIENT", "agent", 1500);
-        if (permission.schema === "select") return showToast(`SELECTED · ${permission.options[state.selected - 1].toUpperCase()}`, "agent");
-        showToast(state.selected === 1 ? "PERMISSION DENIED" : "PERMISSION APPROVED", "agent");
+        return goBack();
       } else if (state.view === "stop") {
         if (state.selected === 0) return goBack();
         if (state.selected === 1) { state.view = "actions"; state.selected = 0; }
-        if (state.selected === 2 && state.connection === "online") beginStopping();
+        if (state.selected === 2 && controlledActionGate("stop").enabled) beginStopping();
       } else if (state.view === "composer") {
-        if (state.selected === 0) return goBack();
-        if (state.selected === 1) app.querySelector(".transcript")?.focus();
-        if (state.selected === 2 && state.connection === "online") beginSending();
+        if (["sending", "accepted", "unknown"].includes(state.composerPhase)) return;
+        const action = composerActions()[state.selected];
+        if (action.type === "page-back") { state.composerPage -= 1; selectComposerCancel(); }
+        if (action.type === "page-next") {
+          state.composerPage += 1;
+          state.composerVisitedMax = Math.max(state.composerVisitedMax, state.composerPage);
+          selectComposerCancel();
+        }
+        if (action.type === "cancel") return cancelComposer();
+        if (action.type === "send" && !action.disabled) beginSending();
+      } else if (state.view === "pairing") {
+        if (state.pairingPhase === "unpaired") state.pairingPhase = "pairing";
+        else if (state.pairingPhase === "pairing") state.pairingPhase = "unpaired";
+        else if (state.pairingPhase === "failed") state.pairingPhase = "unpaired";
+        else {
+          state.grant = { status: "active", host: "Studio", scopes: ["read"] };
+          state.deviceSession = { status: "rechecking", host: "Studio" };
+          state.hasSnapshot = false;
+          state.connection = "syncing";
+          state.view = "home";
+        }
+        state.selected = 0;
+      } else if (state.view === "discard-draft") {
+        if (state.selected === 0) { state.view = "actions"; state.selected = 0; }
+        else {
+          state.draft = null;
+          state.preDictationDraft = null;
+          return showToast("DRAFT DISCARDED", "actions");
+        }
+      } else if (state.view === "auth-required" || state.compatibility === "unsupported") {
+        state.compatibility = "tested";
+        state.pairingPhase = "unpaired";
+        state.view = "pairing";
+        state.selected = 0;
+      } else if (state.view === "security-blocked") {
+        return showToast("DEVICE LOCK STILL REQUIRED", "security-blocked");
       }
       render();
     }
@@ -927,41 +1300,138 @@
       if (state.voicePhase === "transcribing") return;
       if (state.view === "workspace") state.view = "home";
       else if (state.view === "agent") return openActions();
-      else if (["permission", "stop", "composer"].includes(state.view)) state.view = "actions";
-      else if (state.view === "actions") state.view = "agent";
+      else if (["permission", "stop"].includes(state.view)) state.view = "actions";
+      else if (state.view === "composer") return cancelComposer();
+      else if (state.view === "subagents") state.view = "actions";
+      else if (state.view === "discard-draft") state.view = "actions";
+      else if (state.view === "pairing" && state.pairingPhase === "pairing") state.pairingPhase = "unpaired";
+      else if (state.view === "actions") return exitAgentToOrigin();
+      state.selected = 0;
+      render();
+    }
+
+    function exitAgentToOrigin() {
+      const origin = state.agentOrigin;
+      if (origin.view === "subagents") {
+        const parent = findAgent(origin.parentAgentId);
+        state.activeWorkspace = workspaceById(origin.workspaceId) || parent?.parentWorkspace || workspaces[0];
+        state.activeAgent = parent?.agent || workspaces[0].agents[0];
+        state.activeParentAgent = null;
+        state.view = "subagents";
+      } else {
+        state.activeWorkspace = workspaceById(origin.workspaceId) || state.activeWorkspace;
+        state.view = origin.view;
+      }
+      state.selected = 0;
+      render();
+    }
+
+    function openBoundDraft() {
+      const bound = findAgent(state.draft.target.agentId);
+      if (!bound) return;
+      state.activeWorkspace = bound.workspace;
+      state.activeAgent = bound.agent;
+      state.activeParentAgent = bound.parent;
+      state.agentOrigin = { view: "workspace", workspaceId: bound.workspace.id };
+      state.view = "composer";
+      state.composerPage = 0;
+      state.composerVisitedMax = 0;
+      state.composerEntry = "draft";
+      state.composerPhase = "review";
+      selectComposerCancel();
+      render();
+    }
+
+    function enterComposerForActiveAgent() {
+      if (!state.draft) {
+        state.draft = {
+          target: { host: state.activeWorkspace.host, workspaceId: state.activeWorkspace.id, agentId: state.activeAgent.id },
+          text: ""
+        };
+      }
+      state.preDictationDraft = null;
+      state.composerEntry = "draft";
+      state.composerPage = 0;
+      state.composerVisitedMax = 0;
+      state.composerPhase = "review";
+      state.view = "composer";
+      selectComposerCancel();
+      render();
+    }
+
+    function selectComposerCancel() {
+      state.selected = Math.max(0, composerActions().findIndex(action => action.type === "cancel"));
+    }
+
+    function cancelComposer() {
+      if (state.composerEntry === "dictation") state.draft = cloneDraft(state.preDictationDraft);
+      else if (!state.draft?.text.trim()) state.draft = null;
+      state.preDictationDraft = null;
+      state.composerEntry = "draft";
+      state.composerPage = 0;
+      state.composerVisitedMax = 0;
+      state.view = "actions";
       state.selected = 0;
       render();
     }
 
     function startVoice() {
-      if (state.view !== "agent" || state.activeAgent.readOnly || state.connection !== "online") return;
+      if (state.view !== "agent" || (state.draft && !draftMatchesActiveAgent()) || !controlledActionGate("follow-up").enabled) return;
+      const priorDraft = cloneDraft(state.draft);
+      if (!state.draft) {
+        state.draft = {
+          target: { host: state.activeWorkspace.host, workspaceId: state.activeWorkspace.id, agentId: state.activeAgent.id },
+          text: ""
+        };
+      }
+      state.preDictationDraft = priorDraft;
+      state.composerEntry = "dictation";
+      state.holdConsumed = true;
+      state.suppressNextSideClick = true;
+      state.suppressClickUntil = performance.now() + 600;
+      state.recordingStartedAt = performance.now();
       state.voicePhase = "recording";
+      clearTimeout(state.recordingTimer);
+      state.recordingTimer = setTimeout(finishVoice, 30000);
       render();
     }
 
     function finishVoice() {
       if (state.voicePhase !== "recording") return;
+      clearTimeout(state.recordingTimer);
+      if (performance.now() - state.recordingStartedAt < 250) {
+        state.voicePhase = null;
+        state.draft = cloneDraft(state.preDictationDraft);
+        state.preDictationDraft = null;
+        state.composerEntry = "draft";
+        return showToast("TOO SHORT · NOTHING SAVED", "agent");
+      }
       state.voicePhase = "transcribing";
       render();
       clearTimeout(state.timer);
       state.timer = setTimeout(() => {
         state.voicePhase = null;
         state.view = "composer";
-        state.selected = 1;
+        state.composerPage = 0;
+        state.composerVisitedMax = 0;
         if (state.nextVoiceFailure) {
           state.nextVoiceFailure = false;
           state.composerPhase = "voice-failed";
+          selectComposerCancel();
           return render();
         }
         const transcript = "Also include a reconnect regression test.";
-        state.draft = `${state.draft.trim()}${state.draft.trim() ? " " : ""}${transcript}`.slice(0, 280);
+        state.draft.text = `${state.draft.text.trim()}${state.draft.text.trim() ? " " : ""}${transcript}`.slice(0, 280);
         state.composerPhase = "review";
+        selectComposerCancel();
         render();
       }, 650);
     }
 
     function beginSending() {
-      if (state.connection !== "online") return;
+      if (!state.draft?.text.trim() || !findAgent(state.draft.target.agentId) || !draftMatchesActiveAgent() || !controlledActionGate("follow-up").enabled) return;
+      state.commandCounter += 1;
+      state.pendingCommandId = state.pendingCommandId || `r1-${state.activeAgent.id}-${String(state.commandCounter).padStart(3, "0")}`;
       state.composerPhase = "sending";
       render();
       clearTimeout(state.timer);
@@ -971,23 +1441,69 @@
           state.composerPhase = "failed";
           return render();
         }
-        showToast("FOLLOW UP ACCEPTED", "agent");
+        state.composerPhase = "accepted";
+        render();
       }, 800);
     }
 
+    function resolveFollowUp(confirmed) {
+      if (!["accepted", "unknown"].includes(state.composerPhase)) return;
+      if (!confirmed) {
+        state.composerPhase = "unknown";
+        render();
+        return;
+      }
+      state.draft = null;
+      state.preDictationDraft = null;
+      state.pendingCommandId = null;
+      showToast("FOLLOW UP CONFIRMED", "agent");
+    }
+
+    function beginSync() {
+      if (["auth-required", "online", "syncing"].includes(state.connection)) return;
+      if (state.grant.status !== "active") return enterAuthRequired();
+      state.connection = "syncing";
+      state.deviceSession = { status: "rechecking", host: state.grant.host };
+      render();
+    }
+
+    function completeSync() {
+      if (state.connection !== "syncing") return;
+      if (state.grant.status !== "active") return enterAuthRequired();
+      if (!state.deviceLock || !state.testedFirmware || state.compatibility !== "tested") return enterSecurityBlocked();
+      state.deviceSession = { status: "active", host: state.grant.host };
+      state.connection = "online";
+      state.hasSnapshot = true;
+      render();
+    }
+
     function beginStopping() {
+      state.commandCounter += 1;
+      state.pendingStop = {
+        commandId: `r1-stop-${state.activeAgent.id}-${String(state.commandCounter).padStart(3, "0")}`,
+        agentId: state.activeAgent.id,
+        targetTurnId: state.activeAgent.turnId
+      };
       state.view = "stopping";
       render();
     }
 
     function resolveStop(succeeded) {
       if (state.view !== "stopping") return;
+      if (!state.pendingStop || state.pendingStop.agentId !== state.activeAgent.id || state.pendingStop.targetTurnId !== state.activeAgent.turnId) {
+        state.pendingStop = null;
+        state.view = "agent";
+        state.notice = "TURN CHANGED · NOTHING STOPPED";
+        return render();
+      }
       if (succeeded) {
         state.activeAgent.lifecycle = "idle";
         state.notice = null;
+        state.pendingStop = null;
         showToast("TURN STOPPED", "agent");
       } else {
         state.activeAgent.lifecycle = "running";
+        state.pendingStop = null;
         state.view = "agent";
         state.notice = "STOP FAILED · AGENT STILL RUNNING";
         render();
@@ -1004,13 +1520,22 @@
     }
 
     document.addEventListener("keydown", event => {
-      if (event.target.matches("textarea") && event.key !== "Escape") return;
       if (event.key === "ArrowUp") { event.preventDefault(); move(-1); }
       if (event.key === "ArrowDown") { event.preventDefault(); move(1); }
       if (event.key === "Enter") { event.preventDefault(); activate(); }
       if (event.key === "Escape" || event.key === "Backspace") { event.preventDefault(); goBack(); }
-      if (event.key.toLowerCase() === "o") { state.connection = state.connection === "online" ? "stale" : "online"; render(); }
+      if (event.key.toLowerCase() === "o") {
+        event.preventDefault();
+        if (state.connection === "online") {
+          state.connection = "stale";
+          state.deviceSession = { status: "expired", host: state.grant.host };
+          render();
+        } else beginSync();
+      }
+      if (event.key.toLowerCase() === "r") { event.preventDefault(); completeSync(); }
       if (event.key.toLowerCase() === "a") resolveStop(true);
+      if (event.key.toLowerCase() === "c") resolveFollowUp(true);
+      if (event.key.toLowerCase() === "u") resolveFollowUp(false);
       if (event.key.toLowerCase() === "f") resolveStop(false);
       if (event.key.toLowerCase() === "v") state.nextVoiceFailure = true;
       if (event.key.toLowerCase() === "s") state.nextSendFailure = true;
@@ -1025,29 +1550,83 @@
         event.preventDefault();
         state.spaceHeld = false;
         finishVoice();
+        state.holdConsumed = false;
       }
     });
 
+    window.addEventListener("scrollUp", () => move(-1));
+    window.addEventListener("scrollDown", () => move(1));
+    window.addEventListener("sideClick", () => {
+      if (state.suppressNextSideClick && performance.now() <= state.suppressClickUntil) {
+        state.suppressNextSideClick = false;
+        return;
+      }
+      state.suppressNextSideClick = false;
+      if (!state.holdConsumed) activate();
+    });
+    window.addEventListener("longPressStart", () => {
+      if (state.voicePhase || ["sending", "accepted", "unknown"].includes(state.composerPhase) || state.view === "stopping") return;
+      startVoice();
+    });
+    window.addEventListener("longPressEnd", () => {
+      finishVoice();
+      state.holdConsumed = false;
+    });
+    window.addEventListener("resize", render);
+
     function applyDemoScreen() {
       const screen = new URLSearchParams(location.search).get("screen");
-      if (!screen || screen === "home") return;
+      if (!screen) return;
       state.activeWorkspace = workspaces[0];
       state.activeAgent = workspaces[0].agents[0];
+      state.activeParentAgent = null;
+      state.connection = "online";
+      state.agentOrigin = { view: "workspace", workspaceId: "mobile" };
+      if (screen === "home") { state.view = "home"; state.selected = 0; }
+      if (screen === "attention-overflow") { state.view = "home"; state.attentionOverflow = 7; state.selected = 3; }
+      if (screen === "pairing") { state.view = "pairing"; state.selected = 0; }
+      if (screen === "pairing-progress") { state.view = "pairing"; state.pairingPhase = "pairing"; state.selected = 0; }
+      if (screen === "pair-failed") { state.view = "pairing"; state.pairingPhase = "failed"; state.selected = 0; }
+      if (screen === "paired") { state.view = "pairing"; state.pairingPhase = "paired"; state.selected = 0; }
+      if (screen === "first-load") { state.hasSnapshot = false; state.connection = "connecting"; state.view = "home"; }
+      if (screen === "connecting") { state.connection = "connecting"; state.view = "home"; }
+      if (screen === "syncing") { state.connection = "syncing"; state.view = "home"; }
+      if (screen === "stale") { state.connection = "stale"; state.view = "home"; state.selected = 0; }
+      if (screen === "auth-required" || screen === "revoked") enterAuthRequired();
+      if (screen === "security-blocked") enterSecurityBlocked();
+      if (screen === "limited") { state.compatibility = "limited"; state.testedFirmware = false; state.view = "home"; }
+      if (screen === "firmware-unsupported") { state.compatibility = "unsupported"; state.testedFirmware = false; state.view = "unsupported"; }
       if (screen === "workspace") { state.view = "workspace"; state.selected = 0; }
+      if (screen === "related-workspace") { state.activeWorkspace = workspaces[1]; state.view = "workspace"; state.selected = 0; }
       if (screen === "agent") { state.view = "agent"; state.timelineFocus = 1; }
       if (screen === "actions") { state.view = "actions"; state.selected = 0; }
-      if (screen === "permission") { state.view = "permission"; state.selected = 1; }
-      if (screen === "unsupported") { state.activeAgent.permission = { schema: "editor", complete: false }; state.view = "permission"; state.selected = 0; }
-      if (screen === "select") { state.activeAgent.permission = { schema: "select", complete: true, target: "npm run test:mobile -- --focused", options: ["Run once", "Always allow"] }; state.view = "permission"; state.selected = 1; }
-      if (screen === "stop") { state.activeAgent = workspaces[0].agents[1]; state.view = "stop"; state.selected = 1; }
-      if (screen === "composer") { state.view = "composer"; state.selected = 1; }
+      if (screen === "subagents") { state.view = "subagents"; state.selected = 0; }
+      if (screen === "permission") { state.view = "permission"; state.selected = 0; }
+
+      const child = findAgent("tests");
+      if (["child-agent", "stop", "stop-grant-required", "stopping", "stop-failed", "turn-changed", "composer", "voice", "transcribing", "voice-failed", "send-failed", "unknown", "grant-required", "device-lock-required", "host-mismatch", "session-expired"].includes(screen)) {
+        state.activeWorkspace = child.workspace;
+        state.activeAgent = child.agent;
+        state.activeParentAgent = child.parent;
+        state.agentOrigin = { view: "workspace", workspaceId: child.workspace.id };
+      }
+      if (screen === "child-agent") { state.view = "agent"; state.timelineFocus = 0; }
+      if (screen === "stop") { state.view = "stop"; state.selected = 1; }
+      if (screen === "stop-grant-required") { state.grant = { status: "revoked", host: null, scopes: [] }; state.deviceSession = { status: "invalid", host: null }; state.view = "stop"; state.selected = 1; }
+      if (screen === "composer") { state.view = "composer"; state.composerPage = 0; state.composerVisitedMax = 0; state.composerEntry = "draft"; selectComposerCancel(); }
       if (screen === "voice") { state.view = "agent"; state.voicePhase = "recording"; }
       if (screen === "transcribing") { state.view = "agent"; state.voicePhase = "transcribing"; }
-      if (screen === "voice-failed") { state.view = "composer"; state.composerPhase = "voice-failed"; state.selected = 1; }
-      if (screen === "send-failed") { state.view = "composer"; state.composerPhase = "failed"; state.selected = 1; }
-      if (screen === "stopping") { state.activeAgent = workspaces[0].agents[1]; state.view = "stopping"; }
-      if (screen === "stop-failed") { state.activeAgent = workspaces[0].agents[1]; state.view = "agent"; state.notice = "STOP FAILED · AGENT STILL RUNNING"; }
-      if (screen === "stale") { state.connection = "stale"; state.view = "home"; state.selected = 0; }
+      if (screen === "voice-failed") { state.view = "composer"; state.composerPhase = "voice-failed"; state.selected = 0; }
+      if (screen === "send-failed") { state.view = "composer"; state.composerPhase = "failed"; state.selected = 0; }
+      if (screen === "unknown") { state.view = "composer"; state.composerPhase = "unknown"; state.pendingCommandId = "r1-tests-001"; }
+      if (screen === "stopping") { state.view = "stopping"; }
+      if (screen === "stop-failed") { state.view = "agent"; state.notice = "STOP FAILED · AGENT STILL RUNNING"; }
+      if (screen === "turn-changed") { state.view = "agent"; state.notice = "TURN CHANGED · NOTHING STOPPED"; }
+      if (screen === "grant-required") { state.grant = { status: "revoked", host: null, scopes: [] }; state.deviceSession = { status: "invalid", host: null }; state.view = "actions"; }
+      if (screen === "device-lock-required") { state.deviceLock = false; state.view = "actions"; }
+      if (screen === "host-mismatch") { state.grant.host = "Other Host"; state.deviceSession.host = "Other Host"; state.view = "actions"; }
+      if (screen === "session-expired") { state.deviceSession = { status: "expired", host: state.grant.host }; state.view = "actions"; }
+      if (screen === "foreign-draft") { state.activeWorkspace = workspaces[1]; state.activeAgent = workspaces[1].agents[0]; state.view = "actions"; }
     }
 
     applyDemoScreen();

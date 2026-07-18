@@ -107,10 +107,10 @@ npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-For this repository, the existing prototype can be served without installing dependencies:
+For this repository, the existing prototype can be served without installing dependencies from the repository root:
 
 ```bash
-cd /Users/tony/workspace/ai/rabbit-r1-os/.worktrees/creation-webview-mac
+cd /Users/tony/workspace/ai/rabbit-r1-os
 npx serve .
 ```
 
@@ -132,7 +132,7 @@ Do not expose an unauthenticated Paseo daemon through a tunnel. The static clien
 
 ### Stable Testing: Static Hosting
 
-For repeatable device testing, publish the static output to GitHub Pages, Netlify, Cloudflare Pages, or an equivalent HTTPS host:
+For repeatable Phase 1 private dogfood, publish a private versioned static directory. Phase 2A+ distributable releases use an audited versioned directory on a trusted HTTPS origin such as GitHub Pages, Netlify, Cloudflare Pages, or an equivalent host:
 
 ```bash
 npm run build
@@ -277,13 +277,13 @@ Use browser automation at an exact 240 by 282 viewport. Hardware release gates s
 4. Serve the static client locally and expose it through a temporary HTTPS tunnel.
 5. Generate a JSON install QR with a versioned URL and install it on stock RabbitOS.
 6. Record the target RabbitOS version and verify wheel, side button, STT, storage, HTTPS, and WSS individually.
-7. Test the existing Paseo browser transport through a narrow development gateway.
+7. Test the existing Paseo browser transport directly through Relay behind a pinned local adapter; add a gateway only for measured gaps.
 8. Move to stable versioned static hosting after the device spike.
 9. Keep ADB and custom firmware outside scope unless a measured Creation limitation blocks a required workflow.
 
-## Executable Validation Demo
+## Executable Hardware Capability Probe
 
-The repository now includes `demo/`, a build-free Creation probe implementing the workflow described above:
+The repository now includes `demo/`, a build-free Phase 0A Creation capability probe. It does not validate Paseo pairing, Relay E2EE, subscription, timeline reconciliation, or commands:
 
 - `demo/index.html`: 240x282 Creation entry point.
 - `demo/app.js`: RabbitOS event adapter, desktop fallbacks, capability report, bounded diagnostics, and native/mock STT flow.

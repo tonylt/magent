@@ -1,0 +1,3 @@
+# Controlled actions require a reliable RabbitOS device lock
+
+An R1-specific Device grant limits network authority but does not protect an unlocked physical device. Phase 0/1 owned-device private read-only experiments may run without a device lock, but every distributable release requires a Tested firmware with a reliable RabbitOS lock that the owner enables. This is a release and local capability gate, not a daemon-verifiable per-command security property unless RabbitOS later exposes trustworthy lock attestation. Follow-up and Stop additionally require their explicit grant scopes; the Creation does not implement or store a second long-lived PIN. If the lock prerequisite cannot be verified on the target firmware, no distributable product ships.

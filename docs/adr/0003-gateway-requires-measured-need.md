@@ -1,0 +1,3 @@
+# Reuse Paseo transport before introducing a projection gateway
+
+The R1 client first connects through Paseo Relay using a pinned `DaemonClient` behind a local adapter and contract tests. Paseo must unconditionally provide the safety projection and data minimization needed to keep raw terminal/tool payloads off R1, together with Device enrollment/grant/session authorization, command reconciliation, compatibility exchange, and turn-safe Stop. A separate projection gateway is introduced only when real-device measurements show an unacceptable bundle, memory, frame-size, protocol-stability, or additional performance-projection gap; it is not a prerequisite for those server-enforced safety contracts.
