@@ -34,6 +34,7 @@ export type SemanticCommand =
   | Readonly<{ type: "focus-at"; index: number }>;
 
 export type VoiceError =
+  | "invalid-request"
   | "unsupported"
   | "busy"
   | "not-active"

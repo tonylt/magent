@@ -115,6 +115,12 @@ export function createPlatformRuntime({
   });
   if (detach) cleanups.push(detach);
 
+  function validRequestId(requestId: string): boolean {
+    return requestId.length > 0
+      && requestId.length <= 128
+      && /^[A-Za-z0-9._:-]+$/.test(requestId);
+  }
+
   return {
     kind,
     async inspectCapabilities() {
@@ -127,12 +133,15 @@ export function createPlatformRuntime({
       return () => subscribers.delete(listener);
     },
     startVoice(requestId) {
+      if (!validRequestId(requestId)) return Promise.resolve(voiceFailure("invalid-request"));
       return voice.start(requestId);
     },
     stopVoice(requestId) {
+      if (!validRequestId(requestId)) return Promise.resolve(voiceFailure("invalid-request"));
       return voice.stop(requestId);
     },
     cancelVoice(requestId, reason) {
+      if (!validRequestId(requestId)) return Promise.resolve();
       return voice.cancel(requestId, reason);
     },
     dispose() {
