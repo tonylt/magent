@@ -10,6 +10,8 @@
     "test:production-browser": "npm run build && playwright test -g @production",
     "typecheck": "tsc --noEmit",
     "build": "node scripts/build-production.mjs",
+    "release": "npm run build && node scripts/package-release.mjs",
+    "verify:release": "npm run release && node scripts/verify-release.mjs",
     "serve:lan": "node scripts/serve-lan-https.mjs",
     "verify:production-source": "npm run build && node scripts/verify-production-source.mjs",
     "verify:production-output": "npm run build && node scripts/verify-production-output.mjs",
