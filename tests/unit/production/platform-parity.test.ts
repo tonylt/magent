@@ -51,6 +51,7 @@ test("browser and Rabbit raw input produce the same foreground semantic commands
   rabbit.subscribe((event) => rabbitEvents.push(event));
 
   browserDom.document.dispatchEvent(key("keydown", "ArrowDown"));
+  browserDom.document.dispatchEvent(key("keyup", "ArrowDown"));
   browserDom.document.dispatchEvent(key("keydown", "Enter"));
   browserDom.document.dispatchEvent(key("keydown", " "));
   browserDom.document.dispatchEvent(key("keyup", " "));
