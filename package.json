@@ -24,6 +24,7 @@
   "devDependencies": {
     "@playwright/test": "1.61.1",
     "esbuild": "0.28.1",
+    "qrcode-generator": "1.4.4",
     "typescript": "5.9.3"
   }
 }

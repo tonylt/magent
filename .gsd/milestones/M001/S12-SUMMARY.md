@@ -51,15 +51,28 @@ and a published version is never replaced in place (ADR 0005).
 
 ## Deferred S12 Items (not complete)
 
-- **Vendored install QR** for the production release (no runtime CDN). Decision
-  pending: generate a build-time static SVG from a small self-contained encoder, or
-  add a pinned QR dependency. The demo `install.html` still uses a CDN (out of the S01
-  budget graph) and is acceptable for the probe but not for a distributable release.
 - **Pages publish of the versioned release**: the workflow currently publishes only
   the probe (`demo/`); publishing `dist/r1/v<version>/` under the site is a follow-up
-  that must not disturb the probe path.
+  that must not disturb the probe path. Locally, `RELEASE_BASE_URL=<origin> npm run
+  release` produces a scannable install page.
 - **HITL**: reproducible fresh install and cache-busted upgrade confirmed on the
   owned R1.
+
+## Increment 2: Vendored install QR (complete)
+
+The production install page is now vendored — no runtime CDN. `qrcode-generator@1.4.4`
+(pinned exact, zero dependencies) generates an inline SVG QR of the RabbitOS install
+payload at build time, so the install page is script-free and keeps a strict CSP
+(`default-src 'none'`). `package-release.mjs` writes `install.html` into the version
+directory, encoding `${RELEASE_BASE_URL}/r1/v<version>/`. `verify-release.mjs` treats
+`install.html`/`release.json` as release-level extras and checks the install page is
+script-free, references no external resources, carries a strict CSP, and contains the
+inline SVG (the SVG namespace and the release URL are content, not fetched resources,
+so a reference-based scan is used).
+
+New unit tests: 5 install-page cases (payload https/semver validation, strict-CSP
+script-free render, no external references, rejects non-SVG/scripted markup). Probe
+suite is 37 tests.
 
 ## Deviations
 

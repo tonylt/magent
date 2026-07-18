@@ -2,7 +2,10 @@ import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import qrcode from "qrcode-generator";
+
 import { buildReleaseManifest } from "./lib/release.mjs";
+import { buildInstallPayload, renderInstallHtml } from "./lib/install-page.mjs";
 
 // Package the verified S03 production bundle into an immutable, versioned release at
 // dist/r1/v<version>/ with a release.json audit manifest. Additive: the existing
@@ -39,4 +42,18 @@ for (const file of manifest.files) {
 }
 await writeFile(join(target, "release.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 
-console.log(`Packaged immutable release ${manifest.path} (digest ${manifest.releaseDigest.slice(0, 12)}…, ${manifest.files.length} files).`);
+// Vendored install page: build-time inline SVG QR of the RabbitOS install payload.
+// No runtime CDN, no scripts. The absolute release URL comes from RELEASE_BASE_URL.
+const base = String(process.env.RELEASE_BASE_URL ?? "https://example.invalid").replace(/\/+$/, "");
+if (base === "https://example.invalid") {
+  console.warn("RELEASE_BASE_URL not set; install.html QR uses a placeholder host and is not scannable.");
+}
+const appUrl = `${base}${manifest.path}`;
+const payload = buildInstallPayload({ version, appUrl });
+const qr = qrcode(0, "M");
+qr.addData(JSON.stringify(payload));
+qr.make();
+const qrSvg = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+await writeFile(join(target, "install.html"), renderInstallHtml({ version, appUrl, qrSvg }));
+
+console.log(`Packaged immutable release ${manifest.path} (digest ${manifest.releaseDigest.slice(0, 12)}…, ${manifest.files.length} files) + install.html.`);

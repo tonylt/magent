@@ -23,7 +23,8 @@ Last updated: 2026-07-18
 - S11 merged the S04 tracer and the S03 device gate into one boot-time fail-closed negotiation, added a `CHECKING RELAY` transition and a recoverable `UPGRADE REQUIRED`/`UNSUPPORTED` recovery screen with retry, and advanced the ready state to `RELAY COMPATIBLE` — all driven by S04 fixtures over a loopback `?relay=` source, still exposing no product data.
 - S02 automated preparation: added a LAN HTTPS probe host (`scripts/make-dev-cert.sh`, `npm run serve:lan`) and a sanitized, bounded, payload-free evidence collector (`demo/lib/evidence.js`) with an on-device `?evidence` capture hook and 9 unit tests. S02 stays `awaiting_hardware` — owned-R1 results are still required.
 - Owned-R1 finding: a LAN self-signed cert is rejected by the R1 WebView (black screen, no error UI) — recorded as an H19 observation. Switched to GitHub Pages for a publicly trusted origin: added `.github/workflows/pages.yml` to publish `demo/` and made the probe boot fail-visibly. Owner will run the matrix on another device.
-- S12 increment 1: immutable versioned release packaging (`dist/r1/v<version>/`) with a deterministic `release.json` audit manifest and an independent `verify:release` (digests, CSP, no remote/dynamic imports); 5 unit tests. Additive over the unchanged S03 pipeline. Vendored QR, Pages publish of the release, and HITL install remain open.
+- S12 increment 1: immutable versioned release packaging (`dist/r1/v<version>/`) with a deterministic `release.json` audit manifest and an independent `verify:release` (digests, CSP, no remote/dynamic imports); 5 unit tests. Additive over the unchanged S03 pipeline.
+- S12 increment 2: vendored install QR — `qrcode-generator@1.4.4` (pinned, zero-dep) generates an inline-SVG, script-free, strict-CSP `install.html` at build time (no runtime CDN); 5 install-page unit tests. Remaining S12: Pages publish of the release and on-device reproducible install (HITL).
 
 ## Execution Rules
 

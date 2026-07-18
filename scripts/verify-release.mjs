@@ -36,8 +36,10 @@ for (const file of manifest.files) {
   }
 }
 
-// The manifest file list must match the release directory (excluding release.json).
-const present = (await readdir(releaseDir)).filter((name) => name !== "release.json").sort();
+// The manifest file list must match the release directory (excluding release-level
+// extras: the manifest itself and the vendored install page).
+const RELEASE_EXTRAS = new Set(["release.json", "install.html"]);
+const present = (await readdir(releaseDir)).filter((name) => !RELEASE_EXTRAS.has(name)).sort();
 const declared = manifest.files.map((file) => file.name).sort();
 if (JSON.stringify(present) !== JSON.stringify(declared)) {
   failures.push(`release contents ${present.join(", ")} do not match manifest ${declared.join(", ")}`);
@@ -52,11 +54,28 @@ for (const directive of ["default-src 'none'", "script-src 'self'", "style-src '
 }
 if (manifest.csp.some((directive) => /unsafe-inline|unsafe-eval/i.test(directive))) failures.push("CSP has an unsafe directive");
 
-// No remote or dynamic-import references in shipped assets.
+// No remote or dynamic-import references in shipped bundle assets (blunt scan is safe:
+// the bundle must contain no URLs at all).
 for (const name of present.filter((file) => /\.(?:html|css|js)$/.test(file))) {
   const source = await readFile(join(releaseDir, name), "utf8");
   if (/https?:\/\/|\/\/cdn(?:\.|\/)/i.test(source)) failures.push(`${name}: remote dependency`);
   if (/\bimport\s*\(/.test(source)) failures.push(`${name}: dynamic import`);
+}
+
+// The vendored install page must be script-free, reference no external resources, and
+// carry its own strict CSP. Its inline SVG namespace and the release URL are content,
+// not fetched resources, so scan for actual resource references only.
+try {
+  const install = await readFile(join(releaseDir, "install.html"), "utf8");
+  if (/<script\b/i.test(install)) failures.push("install.html: contains a script");
+  if (/(?:src|href)\s*=\s*["']https?:/i.test(install)) failures.push("install.html: external resource reference");
+  if (/@import|url\(\s*["']?https?:/i.test(install)) failures.push("install.html: external style reference");
+  if (!/Content-Security-Policy/i.test(install) || !/default-src 'none'/.test(install)) {
+    failures.push("install.html: missing strict CSP");
+  }
+  if (!/<svg\b/i.test(install)) failures.push("install.html: missing inline QR SVG");
+} catch {
+  failures.push("install.html: missing from release");
 }
 
 if (failures.length > 0) {
