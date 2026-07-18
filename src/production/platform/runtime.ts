@@ -35,7 +35,7 @@ interface RuntimeHooks {
   emitVoiceResult(requestId: string, result: VoiceResult): void;
 }
 
-interface VoiceBoundary {
+export interface VoiceBoundary {
   start(requestId: string): Promise<VoiceActionResult>;
   stop(requestId: string): Promise<VoiceActionResult>;
   cancel(requestId: string, reason: "background" | "user" | "timeout"): Promise<void>;
@@ -146,6 +146,7 @@ export function createPlatformRuntime({
       return () => subscribers.delete(listener);
     },
     async startVoice(requestId) {
+      if (disposed) return voiceFailure("disposed");
       if (!validRequestId(requestId)) return Promise.resolve(voiceFailure("invalid-request"));
       if (isBackground()) return voiceFailure("background");
       if (voiceRequest) return voiceFailure("busy");
@@ -162,12 +163,14 @@ export function createPlatformRuntime({
       return result;
     },
     async stopVoice(requestId) {
+      if (disposed) return voiceFailure("disposed");
       if (!validRequestId(requestId)) return Promise.resolve(voiceFailure("invalid-request"));
       if (isBackground()) return voiceFailure("background");
       if (voiceRequest !== requestId) return voiceFailure("not-active");
       return voice.stop(requestId);
     },
     async cancelVoice(requestId, reason) {
+      if (disposed) return Promise.resolve();
       if (!validRequestId(requestId)) return Promise.resolve();
       if (voiceRequest === requestId) voiceRequest = null;
       return voice.cancel(requestId, reason);

@@ -62,12 +62,25 @@ try {
   await writeFile(metafilePath, `${JSON.stringify(normalizedMetafile, null, 2)}\n`);
 
   await rm(backup, { recursive: true, force: true });
+  let movedExistingOutput = false;
   try {
     await rename(output, backup);
+    movedExistingOutput = true;
   } catch (error) {
     if (!(error && typeof error === "object" && "code" in error && error.code === "ENOENT")) throw error;
   }
-  await rename(temporary, output);
+  try {
+    await rename(temporary, output);
+  } catch (publishError) {
+    if (movedExistingOutput) {
+      try {
+        await rename(backup, output);
+      } catch (restoreError) {
+        throw new AggregateError([publishError, restoreError], "Production publish and rollback failed");
+      }
+    }
+    throw publishError;
+  }
   await rm(backup, { recursive: true, force: true });
 } catch (error) {
   await rm(temporary, { recursive: true, force: true });

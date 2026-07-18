@@ -108,7 +108,22 @@ export function createProductionShell({
       focus: 0,
     });
     unsubscribe = adapter.subscribe(handlePlatformEvent);
-    const snapshot = await adapter.inspectCapabilities();
+    let snapshot: CapabilitySnapshot;
+    try {
+      snapshot = await adapter.inspectCapabilities();
+    } catch {
+      if (disposed) return;
+      diagnostics.record("capability-decision", "unsupported");
+      updateState({ status: "unsupported", capabilitiesChecked: true });
+      emit({
+        screen: "unsupported",
+        title: "UNSUPPORTED",
+        status: "NO DATA",
+        reasons: ["CAPABILITY PROBE FAILED"],
+        focus: current.focus,
+      });
+      return;
+    }
     if (disposed) return;
     renderDecision(snapshot);
   }

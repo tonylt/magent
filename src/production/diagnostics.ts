@@ -12,6 +12,12 @@ export function createBoundedDiagnostics({
   maxEntries?: number;
   maxBytes?: number;
 } = {}): ProductionDiagnostics {
+  if (!Number.isInteger(maxEntries) || maxEntries < 1) {
+    throw new RangeError("maxEntries must be a positive integer");
+  }
+  if (!Number.isInteger(maxBytes) || maxBytes < 2) {
+    throw new RangeError("maxBytes must be an integer of at least 2");
+  }
   const entries: DiagnosticEntry[] = [];
   let sequence = 0;
 

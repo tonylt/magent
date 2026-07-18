@@ -84,3 +84,24 @@ test("dispose stops active native voice and makes voice APIs terminal", async ()
   assert.deepEqual(await adapter.startVoice("voice-2"), { ok: false, error: "disposed" });
   assert.deepEqual(await adapter.stopVoice("voice-1"), { ok: false, error: "disposed" });
 });
+
+test("an existing plugin observer cannot block or lose receiver binding", async () => {
+  const dom = createRabbitDom();
+  let receiverBound = false;
+  dom.host.onPluginMessage = function (this: RabbitTestHost) {
+    receiverBound = this === dom.host;
+    throw new Error("observer failure");
+  };
+  const adapter = createRabbitPlatformAdapter(dom);
+  const events: PlatformEvent[] = [];
+  adapter.subscribe((event) => events.push(event));
+
+  await adapter.startVoice("voice-1");
+  dom.host.onPluginMessage?.({ type: "sttEnded", transcript: "still delivered" });
+  assert.equal(receiverBound, true);
+  assert.deepEqual(
+    events.filter((event) => event.type === "voice-result").map((event) => event.result),
+    [{ type: "transcript", text: "still delivered" }],
+  );
+  adapter.dispose();
+});

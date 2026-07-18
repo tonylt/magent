@@ -25,7 +25,7 @@ export function createProductionInputController({
 }) {
   let hold: { source: InputSource; startedAt: number } | null = null;
   let capTimer: ReturnType<typeof setTimeout> | null = null;
-  let awaitingReleaseAfterCap = false;
+  let awaitingReleaseAfterCap: InputSource | null = null;
   let suppressClickUntil = 0;
   let disposed = false;
 
@@ -40,7 +40,7 @@ export function createProductionInputController({
   }
 
   function startHold(source: InputSource): void {
-    if (hold || awaitingReleaseAfterCap) return;
+    if (hold || awaitingReleaseAfterCap !== null) return;
     const startedAt = clock.now();
     hold = { source, startedAt };
     emit({ type: "hold-start" }, source);
@@ -49,7 +49,7 @@ export function createProductionInputController({
       const active = hold;
       hold = null;
       capTimer = null;
-      awaitingReleaseAfterCap = true;
+      awaitingReleaseAfterCap = active.source;
       suppressTrailingClick();
       emit({ type: "hold-end" }, active.source);
     }, maxHoldMs);
@@ -57,8 +57,8 @@ export function createProductionInputController({
 
   function endHold(source: InputSource): void {
     if (!hold) {
-      if (awaitingReleaseAfterCap) {
-        awaitingReleaseAfterCap = false;
+      if (awaitingReleaseAfterCap === source) {
+        awaitingReleaseAfterCap = null;
         suppressTrailingClick();
       }
       return;
@@ -81,7 +81,7 @@ export function createProductionInputController({
       endHold(source);
       return true;
     }
-    if (hold || awaitingReleaseAfterCap) return false;
+    if (hold || awaitingReleaseAfterCap !== null) return false;
     if (command.type === "activate" && suppressClickUntil > clock.now()) {
       suppressClickUntil = 0;
       return false;
@@ -97,8 +97,8 @@ export function createProductionInputController({
       clearCapTimer();
       suppressTrailingClick();
     }
-    if (awaitingReleaseAfterCap) {
-      awaitingReleaseAfterCap = false;
+    if (awaitingReleaseAfterCap !== null) {
+      awaitingReleaseAfterCap = null;
       suppressTrailingClick();
     }
   }
@@ -107,7 +107,7 @@ export function createProductionInputController({
     if (disposed) return;
     disposed = true;
     hold = null;
-    awaitingReleaseAfterCap = false;
+    awaitingReleaseAfterCap = null;
     suppressClickUntil = 0;
     clearCapTimer();
   }

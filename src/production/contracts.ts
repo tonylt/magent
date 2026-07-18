@@ -40,6 +40,7 @@ export type VoiceError =
   | "busy"
   | "not-active"
   | "bridge-error"
+  | "disposed"
   | "empty-transcript"
   | "interrupted";
 
@@ -92,7 +93,8 @@ export type GateReason =
   | "NO DATA INTEGRITY"
   | "VOICE UNAVAILABLE"
   | "NO SECURE STORAGE"
-  | "DEVICE LOCK UNVERIFIED";
+  | "DEVICE LOCK UNVERIFIED"
+  | "CAPABILITY PROBE FAILED";
 
 export type GateDecision = Readonly<{
   compatibility: "supported" | "limited" | "unsupported";

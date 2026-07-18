@@ -15,3 +15,8 @@ test("production diagnostics retain only bounded allowlisted codes", () => {
   assert.deepEqual(new Set(snapshot.map((entry) => entry.type)), new Set(["command-rejected"]));
   assert.equal(JSON.stringify(snapshot).includes("transcript"), false);
 });
+
+test("production diagnostics reject impossible budgets", () => {
+  assert.throws(() => createBoundedDiagnostics({ maxEntries: 0 }), RangeError);
+  assert.throws(() => createBoundedDiagnostics({ maxBytes: 1 }), RangeError);
+});

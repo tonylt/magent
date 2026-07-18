@@ -30,15 +30,30 @@ export function createRabbitPlatformAdapter({
   host,
   document,
   capabilities,
+  terminalQuarantineMs = 500,
 }: {
   host: RabbitHost;
   document: DocumentSurface;
   capabilities?: CapabilitySnapshot;
+  terminalQuarantineMs?: number;
 }) {
   let activeRequest: string | null = null;
   let drainingRequest: string | null = null;
+  let drainTimer: ReturnType<typeof setTimeout> | null = null;
   let emitVoiceResult: ((requestId: string, result: VoiceResult) => void) | null = null;
   const previousPluginMessage = host.onPluginMessage;
+
+  function clearDrain(): void {
+    if (drainTimer !== null) clearTimeout(drainTimer);
+    drainTimer = null;
+    drainingRequest = null;
+  }
+
+  function beginDrain(requestId: string): void {
+    clearDrain();
+    drainingRequest = requestId;
+    drainTimer = setTimeout(clearDrain, terminalQuarantineMs);
+  }
 
   const voice = {
     async start(requestId: string): Promise<VoiceActionResult> {
@@ -71,12 +86,19 @@ export function createRabbitPlatformAdapter({
         // The request remains terminal locally even if native cleanup fails.
       }
       activeRequest = null;
-      drainingRequest = requestId;
+      beginDrain(requestId);
       emitVoiceResult?.(requestId, { type: "error", code: "interrupted" });
     },
     dispose(): void {
+      if (activeRequest) {
+        try {
+          host.CreationVoiceHandler?.postMessage("stop");
+        } catch {
+          // Disposal remains terminal even when native cleanup fails.
+        }
+      }
       activeRequest = null;
-      drainingRequest = null;
+      clearDrain();
       emitVoiceResult = null;
     },
   };
@@ -116,12 +138,16 @@ export function createRabbitPlatformAdapter({
       hooks.listen(host, "longPressEnd", () => hooks.dispatch({ type: "hold-end" }, "rabbit"));
 
       const pluginMessage = (message: unknown) => {
-        previousPluginMessage?.(message);
+        try {
+          previousPluginMessage?.call(host, message);
+        } catch {
+          // An existing observer cannot block the production adapter.
+        }
         if (!message || typeof message !== "object" || !("type" in message)) return;
         const plugin = message as { type: unknown; transcript?: unknown };
         if (plugin.type !== "sttEnded") return;
         if (drainingRequest) {
-          drainingRequest = null;
+          clearDrain();
           return;
         }
         if (!activeRequest) return;
@@ -134,6 +160,7 @@ export function createRabbitPlatformAdapter({
             ? { type: "transcript", text: transcript }
             : { type: "error", code: "empty-transcript" },
         );
+        beginDrain(requestId);
       };
       host.onPluginMessage = pluginMessage;
       return () => {
