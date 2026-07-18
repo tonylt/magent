@@ -38,7 +38,7 @@ test("checks device capabilities before rendering a Rabbit shell as limited", as
       semanticInput: "available",
       voice: "available",
       secureStorage: "missing",
-      deviceLock: "unknown",
+      deviceLock: "available",
       https: "available",
       wss: "available",
       crypto: "available",
