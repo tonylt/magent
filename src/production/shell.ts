@@ -1,9 +1,11 @@
 import { evaluateCapabilities } from "./capability-gate.ts";
+import { createBoundedDiagnostics } from "./diagnostics.ts";
 import type {
   CapabilitySnapshot,
   PlatformAdapter,
   PlatformEvent,
   ProductionShell,
+  ProductionDiagnostics,
   ShellState,
   ShellViewModel,
   SemanticCommand,
@@ -12,9 +14,11 @@ import type {
 export function createProductionShell({
   adapter,
   render,
+  diagnostics = createBoundedDiagnostics(),
 }: {
   adapter: PlatformAdapter;
   render: (viewModel: ShellViewModel) => void;
+  diagnostics?: ProductionDiagnostics;
 }): ProductionShell {
   let current: ShellState = {
     status: "idle",
@@ -41,6 +45,7 @@ export function createProductionShell({
     if (disposed) return;
     if (event.type === "lifecycle") {
       updateState({ lifecycle: event.state });
+      diagnostics.record("lifecycle", event.state);
       return;
     }
     if (event.type === "command") dispatch(event.command);
@@ -48,6 +53,7 @@ export function createProductionShell({
 
   function renderDecision(snapshot: CapabilitySnapshot): void {
     const decision = evaluateCapabilities(snapshot);
+    diagnostics.record("capability-decision", decision.compatibility);
     updateState({
       status: decision.compatibility === "supported" ? "ready" : decision.compatibility,
       lifecycle: snapshot.lifecycle,
@@ -92,6 +98,7 @@ export function createProductionShell({
   async function start(): Promise<void> {
     if (started || disposed) return;
     started = true;
+    diagnostics.record("capability-probe", "started");
     updateState({ status: "probing" });
     emit({
       screen: "checking",
@@ -109,10 +116,22 @@ export function createProductionShell({
   function dispatch(
     command: SemanticCommand,
   ): "accepted" | "background" | "not-ready" | "disposed" {
-    if (disposed) return "disposed";
-    if (current.lifecycle === "background") return "background";
-    if (current.status !== "ready" || currentViewModel?.screen !== "ready") return "not-ready";
-    if (command.type === "hold-start" || command.type === "hold-end") return "not-ready";
+    if (disposed) {
+      diagnostics.record("command-rejected", "disposed");
+      return "disposed";
+    }
+    if (current.lifecycle === "background") {
+      diagnostics.record("command-rejected", "background");
+      return "background";
+    }
+    if (current.status !== "ready" || currentViewModel?.screen !== "ready") {
+      diagnostics.record("command-rejected", "not-ready");
+      return "not-ready";
+    }
+    if (command.type === "hold-start" || command.type === "hold-end") {
+      diagnostics.record("command-rejected", "not-ready");
+      return "not-ready";
+    }
 
     let focus = current.focus;
     if (command.type === "previous") focus = Math.max(0, focus - 1);
@@ -131,12 +150,14 @@ export function createProductionShell({
     unsubscribe = null;
     adapter.dispose();
     updateState({ status: "disposed" });
+    diagnostics.record("shell-disposed", "disposed");
   }
 
   return {
     start,
     dispatch,
     state: () => ({ ...current }),
+    diagnostics: () => diagnostics.snapshot(),
     dispose,
   };
 }

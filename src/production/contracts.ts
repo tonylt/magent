@@ -145,5 +145,34 @@ export interface ProductionShell {
   start(): Promise<void>;
   dispatch(command: SemanticCommand): "accepted" | "background" | "not-ready" | "disposed";
   state(): ShellState;
+  diagnostics(): readonly DiagnosticEntry[];
   dispose(): void;
+}
+
+export type DiagnosticType =
+  | "capability-probe"
+  | "capability-decision"
+  | "lifecycle"
+  | "command-rejected"
+  | "shell-disposed";
+
+export type DiagnosticCode =
+  | "started"
+  | "supported"
+  | "limited"
+  | "unsupported"
+  | "foreground"
+  | "background"
+  | "not-ready"
+  | "disposed";
+
+export type DiagnosticEntry = Readonly<{
+  sequence: number;
+  type: DiagnosticType;
+  code: DiagnosticCode;
+}>;
+
+export interface ProductionDiagnostics {
+  record(type: DiagnosticType, code: DiagnosticCode): void;
+  snapshot(): readonly DiagnosticEntry[];
 }
