@@ -69,7 +69,7 @@ export.
 | H16 | Storage suspend/TTL | Suspend/resume, expiry, capacity boundary, and no stale secure result are measured | PENDING | - | |
 | H17 | Storage corruption/wipe | Invalid schema/corruption fails closed and synthetic data is wiped on reset/invalidation | PENDING | - | |
 | H18 | Device lock | Reliable RabbitOS lock exists, can be enabled, gates access after wake, and is documented for this firmware | PENDING | - | No daemon attestation claim |
-| H19 | HTTPS | Trusted origin loads with normal certificate validation; failure is visible | PENDING | - | |
+| H19 | HTTPS | Trusted origin loads with normal certificate validation; failure is visible | PENDING | - | LAN self-signed cert rejected by the WebView (black screen, no error UI); retest on GitHub Pages trusted cert |
 | H20 | WSS | Trusted test endpoint connects with certificate validation; offline/failure/recovery visible | PENDING | - | Not Relay/E2EE proof |
 | H21 | Offline/online | Network transitions are observed without unbounded retries or false success | PENDING | - | |
 | H22 | Suspend/resume | Active hold interrupts; background inputs are ignored; foreground restores inputs and exact safe state | PENDING | - | |

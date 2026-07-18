@@ -35,7 +35,34 @@ S01 uses a 500ms late-click suppression fixture. It is not a RabbitOS guarantee;
 
 For a real R1, expose the same server over HTTPS or deploy `demo/` to static hosting. Open `install.html` from that HTTPS origin and scan its QR. Increment `?v=1` in `install.html` after deployments to bypass the RabbitOS Creation URL cache.
 
-## Real R1 over LAN HTTPS (S02)
+## GitHub Pages (recommended for owned-R1 install)
+
+GitHub Pages gives the probe a publicly trusted HTTPS certificate, so the R1 WebView
+loads it without a self-signed CA. A LAN self-signed cert is rejected by the WebView
+and shows a black screen — confirmed as H19. The probe holds no secrets and reaches no
+daemon, so public static hosting is safe; production Relay transport stays separate.
+
+One-time setup:
+
+1. Create a GitHub repo and push this project:
+   ```bash
+   git remote add origin git@github.com:<you>/<repo>.git
+   git push -u origin main
+   ```
+2. In the repo, open **Settings → Pages** and set **Source: GitHub Actions**.
+3. The `Deploy probe to GitHub Pages` workflow publishes `demo/` on each push to
+   `main` (or run it manually from the Actions tab).
+
+Then, per device:
+
+1. Open `https://<you>.github.io/<repo>/install.html` on any browser and scan the QR
+   with the R1. Bump `?v=` in `install.html` after each deploy to bust the Creation
+   URL cache (H02).
+2. Add `?evidence=1` to the app URL to expose the `window.__probeEvidence` capture
+   hook, then run the `S02-HARDWARE-UAT.md` matrix (H01–H24) and store redacted
+   evidence under `artifacts/hardware/s02/`.
+
+## Real R1 over LAN HTTPS (alternative)
 
 RabbitOS Creations install only from an HTTPS origin, so LAN testing needs a
 certificate. The host and the R1 must be on the same network.
