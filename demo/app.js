@@ -1,4 +1,5 @@
 import { createDiagnosticLog } from "./lib/diagnostics.js";
+import { createEvidenceCollector, deriveOriginClass } from "./lib/evidence.js";
 import { createInputController } from "./lib/input-controller.js";
 import { createInitialProbeState, reduceProbeState } from "./lib/probe-store.js";
 import { createRabbitBridgeAdapter } from "./lib/rabbit-bridge-adapter.js";
@@ -312,7 +313,44 @@ diagnostics.record("boot", {
   height: innerHeight,
 });
 
-if (new URLSearchParams(location.search).has("debug")) {
+// S02 evidence capture: sanitized, bounded, payload-free. Headless (no DOM change);
+// the export hook is exposed only with ?evidence for the owned-R1 UAT run.
+const PROBE_VERSION = "s02-1";
+const evidence = createEvidenceCollector({
+  version: PROBE_VERSION,
+  digest: document.querySelector('meta[name="probe-digest"]')?.content ?? "",
+  originClass: deriveOriginClass(location),
+});
+(function captureEnvironment() {
+  const capabilities = bridge.capabilities();
+  evidence.setFirmware("unknown"); // Tested-firmware is a human decision recorded on device.
+  evidence.setViewport({
+    width: innerWidth,
+    height: innerHeight,
+    orientation: innerWidth <= innerHeight ? "portrait" : "landscape",
+  });
+  evidence.setCapabilities({
+    https: capabilities.protocol === "https",
+    voice: Boolean(capabilities.voice),
+    secureStorage: Boolean(capabilities.secureStorage),
+    sensors: Boolean(capabilities.sensors),
+  });
+})();
+
+const search = new URLSearchParams(location.search);
+if (search.has("evidence")) {
+  window.__probeEvidence = Object.freeze({
+    export: () => evidence.export(),
+    setFirmware: (status) => evidence.setFirmware(status),
+    recordResult: (entry) => evidence.recordResult(entry),
+    recordMeasurement: (key, value) => evidence.recordMeasurement(key, value),
+    recordResourceSample: (sample) => evidence.recordResourceSample(sample),
+    setProductMode: (mode) => evidence.setProductMode(mode),
+    reset: () => evidence.reset(),
+  });
+}
+
+if (search.has("debug")) {
   window.__probeDebug = Object.freeze({
     diagnostics: () => diagnostics.snapshot(),
   });

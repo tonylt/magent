@@ -21,6 +21,32 @@ owner_signoff: pending
 - Each result is exactly `PASS`, `FALLBACK`, `BLOCKER`, or `PENDING`.
 - Re-run the entire matrix when firmware support changes.
 
+## Evidence Capture (probe harness)
+
+The probe ships a sanitized, bounded, payload-free evidence collector
+(`demo/lib/evidence.js`). It is allowlist-validated, so the export can only hold
+structured capability/result metadata — never a token, transcript, raw audio, URL,
+credential, Device ID, network address, or Relay offer.
+
+On the owned R1, install the probe with the `?evidence` flag (for example
+`https://<lan-ip>:4173/demo/?evidence=1`) to expose the capture hook on `window`:
+
+```js
+// Firmware/viewport/capabilities/origin class are captured headlessly on boot.
+__probeEvidence.setFirmware("tested");                 // human decision on device
+__probeEvidence.recordResult({ id: "H05", result: "PASS", evidenceId: "S02-E001" });
+__probeEvidence.recordMeasurement("lateClickSuppressionMs", 420);
+__probeEvidence.recordMeasurement("wheelDirection", "up-forward");
+__probeEvidence.recordResourceSample({ elapsedMinutes: 30, domNodes: 118, timers: 3 });
+__probeEvidence.setProductMode("PRIVATE_READ_ONLY");
+const bundle = __probeEvidence.export();               // review, then save under artifacts/hardware/s02/
+```
+
+`originClass` is derived from the location without storing the URL. Set
+`<meta name="probe-digest" content="...">` to bind the exported bundle to a release
+digest. Human notes stay in this matrix; only machine-checkable evidence lives in the
+export.
+
 ## Matrix
 
 | ID | Area | Expected evidence | Result | Evidence ID | Notes |

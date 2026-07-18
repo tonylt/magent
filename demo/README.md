@@ -59,7 +59,9 @@ Then:
    from the R1. Bump `?v=` in `install.html` after each deploy to bust the Creation
    URL cache (**H02**).
 3. Run the `S02-HARDWARE-UAT.md` matrix (H01–H24) and store redacted evidence under
-   `artifacts/hardware/s02/`.
+   `artifacts/hardware/s02/`. Install with `?evidence=1` to expose the sanitized
+   capture hook `window.__probeEvidence` (see the matrix doc for usage); its export is
+   allowlist-validated and payload-free.
 
 Notes and boundaries:
 

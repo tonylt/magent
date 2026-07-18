@@ -21,6 +21,7 @@ Last updated: 2026-07-18
 - `0e543e0` recorded S03 production shell completion.
 - S04 pinned the Relay `hello`/`offer`/`subscribe`/`frame` subset into a pure contract, a transport boundary, a compatibility tracer, and fixtures that fail visibly on any drift, without opening a real network or shipping in the default bundle.
 - S11 merged the S04 tracer and the S03 device gate into one boot-time fail-closed negotiation, added a `CHECKING RELAY` transition and a recoverable `UPGRADE REQUIRED`/`UNSUPPORTED` recovery screen with retry, and advanced the ready state to `RELAY COMPATIBLE` — all driven by S04 fixtures over a loopback `?relay=` source, still exposing no product data.
+- S02 automated preparation: added a LAN HTTPS probe host (`scripts/make-dev-cert.sh`, `npm run serve:lan`) and a sanitized, bounded, payload-free evidence collector (`demo/lib/evidence.js`) with an on-device `?evidence` capture hook and 9 unit tests. S02 stays `awaiting_hardware` — owned-R1 results are still required.
 
 ## Execution Rules
 

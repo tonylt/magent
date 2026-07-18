@@ -64,4 +64,10 @@ S02 is complete only when:
 
 ## Current Status
 
-The automated S01 harness is complete. No owned-R1 result has been collected in this execution, so S02 remains `awaiting_hardware`.
+The automated S01 harness is complete. Task 1 automated preparation is now also
+complete: the probe carries a sanitized, bounded, payload-free evidence collector
+(`demo/lib/evidence.js`) with an on-device `?evidence` capture hook, covered by 9 unit
+tests. LAN HTTPS hosting is provided by `scripts/make-dev-cert.sh` and
+`npm run serve:lan`. No owned-R1 result has been collected in this execution, so S02
+remains `awaiting_hardware`; browser preparation may mark UAT items `READY`, never
+`PASS`.
