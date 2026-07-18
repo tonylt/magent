@@ -71,6 +71,7 @@ export function createPlatformRuntime({
     : "foreground";
   let sequence = 0;
   let disposed = false;
+  let voiceRequest: string | null = null;
 
   function emit(event: UnsequencedEvent): void {
     if (disposed) return;
@@ -98,7 +99,12 @@ export function createPlatformRuntime({
   ): void {
     if (disposed || lifecycle === state) return;
     lifecycle = state;
-    if (state === "background") input.interrupt();
+    if (state === "background") {
+      input.interrupt();
+      const requestId = voiceRequest;
+      voiceRequest = null;
+      if (requestId) void voice.cancel(requestId, "background");
+    }
     emit({ type: "lifecycle", state, cause });
   }
 
@@ -111,7 +117,10 @@ export function createPlatformRuntime({
   const detach = attach({
     listen,
     dispatch,
-    emitVoiceResult: (requestId, result) => emit({ type: "voice-result", requestId, result }),
+    emitVoiceResult: (requestId, result) => {
+      if (voiceRequest === requestId) voiceRequest = null;
+      emit({ type: "voice-result", requestId, result });
+    },
   });
   if (detach) cleanups.push(detach);
 
@@ -119,6 +128,10 @@ export function createPlatformRuntime({
     return requestId.length > 0
       && requestId.length <= 128
       && /^[A-Za-z0-9._:-]+$/.test(requestId);
+  }
+
+  function isBackground(): boolean {
+    return lifecycle === "background";
   }
 
   return {
@@ -132,21 +145,37 @@ export function createPlatformRuntime({
       subscribers.add(listener);
       return () => subscribers.delete(listener);
     },
-    startVoice(requestId) {
+    async startVoice(requestId) {
       if (!validRequestId(requestId)) return Promise.resolve(voiceFailure("invalid-request"));
-      return voice.start(requestId);
+      if (isBackground()) return voiceFailure("background");
+      if (voiceRequest) return voiceFailure("busy");
+      voiceRequest = requestId;
+      const result = await voice.start(requestId);
+      if (!result.ok) {
+        if (voiceRequest === requestId) voiceRequest = null;
+        return result;
+      }
+      if (isBackground() || voiceRequest !== requestId) {
+        await voice.cancel(requestId, "background");
+        return voiceFailure("background");
+      }
+      return result;
     },
-    stopVoice(requestId) {
+    async stopVoice(requestId) {
       if (!validRequestId(requestId)) return Promise.resolve(voiceFailure("invalid-request"));
+      if (isBackground()) return voiceFailure("background");
+      if (voiceRequest !== requestId) return voiceFailure("not-active");
       return voice.stop(requestId);
     },
-    cancelVoice(requestId, reason) {
+    async cancelVoice(requestId, reason) {
       if (!validRequestId(requestId)) return Promise.resolve();
+      if (voiceRequest === requestId) voiceRequest = null;
       return voice.cancel(requestId, reason);
     },
     dispose() {
       if (disposed) return;
       disposed = true;
+      voiceRequest = null;
       input.dispose();
       voice.dispose();
       while (cleanups.length > 0) cleanups.pop()?.();

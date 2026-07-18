@@ -35,6 +35,7 @@ export type SemanticCommand =
 
 export type VoiceError =
   | "invalid-request"
+  | "background"
   | "unsupported"
   | "busy"
   | "not-active"
