@@ -12,6 +12,7 @@ test("disposing during a capability probe prevents a late ready render", async (
     kind: "browser",
     inspectCapabilities: () => probe,
     subscribe: () => () => {},
+    sendCommand: () => false,
     startVoice: async () => ({ ok: false, error: "unsupported" }),
     stopVoice: async () => ({ ok: false, error: "not-active" }),
     cancelVoice: async () => {},

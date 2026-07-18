@@ -76,6 +76,7 @@ export interface PlatformAdapter {
   readonly kind: PlatformKind;
   inspectCapabilities(): Promise<CapabilitySnapshot>;
   subscribe(listener: (event: PlatformEvent) => void): () => void;
+  sendCommand(command: SemanticCommand, source: InputSource): boolean;
   startVoice(requestId: string): Promise<VoiceActionResult>;
   stopVoice(requestId: string): Promise<VoiceActionResult>;
   cancelVoice(requestId: string, reason: "background" | "user" | "timeout"): Promise<void>;

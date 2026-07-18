@@ -18,6 +18,7 @@ function createAdapter(capabilities: CapabilitySnapshot): PlatformAdapter {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    sendCommand: () => false,
     startVoice: async () => ({ ok: false, error: "unsupported" }),
     stopVoice: async () => ({ ok: false, error: "not-active" }),
     cancelVoice: async () => {},

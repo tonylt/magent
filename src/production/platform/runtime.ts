@@ -145,6 +145,9 @@ export function createPlatformRuntime({
       subscribers.add(listener);
       return () => subscribers.delete(listener);
     },
+    sendCommand(command, source) {
+      return dispatch(command, source);
+    },
     async startVoice(requestId) {
       if (disposed) return voiceFailure("disposed");
       if (!validRequestId(requestId)) return Promise.resolve(voiceFailure("invalid-request"));

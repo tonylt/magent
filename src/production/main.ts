@@ -49,7 +49,7 @@ let shell: ProductionShell;
 const render = createProductionView({
   root,
   platform,
-  dispatch: (command) => { shell.dispatch(command); },
+  dispatch: (command) => { adapter.sendCommand(command, "touch"); },
 });
 shell = createProductionShell({ adapter, render });
 void shell.start();

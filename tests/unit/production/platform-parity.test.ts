@@ -102,8 +102,8 @@ test("browser and Rabbit raw input produce the same foreground semantic commands
   rabbit.dispose();
   browserDom.document.dispatchEvent(key("keydown", "ArrowDown"));
   rabbitDom.host.dispatchEvent(new Event("scrollDown"));
-  assert.equal(commands(browserEvents).length, 5);
-  assert.equal(commands(rabbitEvents).length, 5);
+  assert.equal(commands(browserEvents).length, 6);
+  assert.equal(commands(rabbitEvents).length, 6);
 });
 
 test("browser and Rabbit fixtures emit the same voice result contract", async () => {

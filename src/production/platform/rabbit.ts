@@ -49,10 +49,10 @@ export function createRabbitPlatformAdapter({
     drainingRequest = null;
   }
 
-  function beginDrain(requestId: string): void {
+  function beginDrain(requestId: string, waitForNativeTerminal = false): void {
     clearDrain();
     drainingRequest = requestId;
-    drainTimer = setTimeout(clearDrain, terminalQuarantineMs);
+    if (!waitForNativeTerminal) drainTimer = setTimeout(clearDrain, terminalQuarantineMs);
   }
 
   const voice = {
@@ -86,7 +86,7 @@ export function createRabbitPlatformAdapter({
         // The request remains terminal locally even if native cleanup fails.
       }
       activeRequest = null;
-      beginDrain(requestId);
+      beginDrain(requestId, true);
       emitVoiceResult?.(requestId, { type: "error", code: "interrupted" });
     },
     dispose(): void {

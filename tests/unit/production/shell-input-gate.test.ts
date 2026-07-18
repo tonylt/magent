@@ -38,6 +38,7 @@ function createAdapter() {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    sendCommand: () => false,
     startVoice: async (requestId) => ({ ok: true, requestId }),
     stopVoice: async (requestId) => ({ ok: true, requestId }),
     cancelVoice: async () => {},
