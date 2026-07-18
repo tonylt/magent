@@ -74,11 +74,11 @@ This milestone is complete only when all are true:
 
 ## Slices
 
-- [ ] **S01: Automated Creation probe baseline (AFK)** `risk:high` `depends:[]`
+- [x] **S01: Automated Creation probe baseline (AFK)** `risk:high` `depends:[]`
   > After this: the browser runs the real semantic input controller and Rabbit bridge adapter against deterministic state tests, fixed 240x282 screenshots, resource budgets, and payload-free diagnostic logs.
 - [ ] **S02: Firmware-bound owned-R1 capability matrix (HITL)** `risk:high` `depends:[S01]`
   > After this: one tested firmware has recorded `PASS/FALLBACK/BLOCKER` evidence for wheel, side-button/PTT races, STT, CJK/OSK, HTTPS/WSS, secure storage, device lock, suspend/resume, and resource limits before sensitive data is exposed.
-- [ ] **S03: Production Creation shell and platform adapters (AFK)** `risk:medium` `depends:[S01]`
+- [x] **S03: Production Creation shell and platform adapters (AFK)** `risk:medium` `depends:[S01]`
   > After this: the same production shell runs through either the deterministic browser adapter or RabbitOS adapter, with stable semantic commands and no private device API leaking into views.
 - [ ] **S04: Pinned Relay E2EE compatibility tracer (AFK)** `risk:high` `depends:[S03]`
   > After this: a pinned Paseo client adapter exchanges the actual hello, offer, subscription, and frame subset against fixtures and fails visibly on a contract mismatch.
