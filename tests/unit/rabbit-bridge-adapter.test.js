@@ -128,14 +128,16 @@ test("rejects new input while backgrounded and resumes only after foreground", (
   });
 
   host.dispatchEvent(new Event("pagehide"));
+  assert.equal(adapter.sendInput("focus-at", "touch", { focus: 2 }), false);
   host.dispatchEvent(new Event("longPressStart"));
   host.dispatchEvent(new Event("scrollDown"));
   host.dispatchEvent(new Event("pagehide"));
   assert.deepEqual(inputs, []);
 
   host.dispatchEvent(new Event("pageshow"));
+  assert.equal(adapter.sendInput("focus-at", "touch", { focus: 2 }), true);
   host.dispatchEvent(new Event("scrollDown"));
-  assert.deepEqual(inputs, ["next"]);
+  assert.deepEqual(inputs, ["focus-at", "next"]);
   adapter.dispose();
 });
 

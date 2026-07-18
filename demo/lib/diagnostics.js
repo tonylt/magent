@@ -21,7 +21,7 @@ const EVENT_FIELDS = Object.freeze({
     result: oneOf("supported", "limited", "unsupported"),
   },
   input: {
-    command: oneOf("previous", "next", "select", "back", "voice-start", "voice-stop", "interrupt"),
+    command: oneOf("previous", "next", "select", "back", "focus", "voice-start", "voice-stop", "interrupt"),
     source: oneOf("rabbit", "keyboard", "touch", "lifecycle", "system"),
     result: oneOf("emitted", "ignored", "interrupted"),
     code: oneOf("duplicate", "wrong-state", "late-click", "hidden", "timeout", "unavailable"),
@@ -106,4 +106,3 @@ export function createDiagnosticLog({
     },
   });
 }
-

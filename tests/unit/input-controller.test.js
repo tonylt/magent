@@ -25,13 +25,16 @@ test("passes wheel, select, and back as semantic commands", () => {
   controller.handle("previous", "rabbit");
   controller.handle("next", "keyboard");
   controller.handle("select", "touch");
+  controller.handle("focus-at", "touch", { focus: 2 });
   controller.handle("back", "keyboard");
   assert.deepEqual(emitted.map(({ type, source }) => ({ type, source })), [
     { type: "previous", source: "rabbit" },
     { type: "next", source: "keyboard" },
     { type: "select", source: "touch" },
+    { type: "focus-at", source: "touch" },
     { type: "back", source: "keyboard" },
   ]);
+  assert.equal(emitted[3].focus, 2);
 });
 
 test("consumes a hold, ignores duplicate edges, and suppresses one trailing click", () => {

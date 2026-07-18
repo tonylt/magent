@@ -4,7 +4,7 @@ const DEFAULT_CLOCK = {
   clearTimeout: (timer) => globalThis.clearTimeout(timer),
 };
 
-const PASSTHROUGH_COMMANDS = new Set(["previous", "next", "select", "back"]);
+const PASSTHROUGH_COMMANDS = new Set(["previous", "next", "select", "back", "focus-at"]);
 
 export function createInputController({
   emit,
@@ -90,7 +90,7 @@ export function createInputController({
     }));
   }
 
-  function handle(type, source = "unknown") {
+  function handle(type, source = "unknown", details = {}) {
     if (disposed) return;
 
     if (type === "hold-start") {
@@ -117,7 +117,7 @@ export function createInputController({
     }
 
     if (suppressNextClickUntil <= clock.now()) suppressNextClickUntil = 0;
-    emit(event(type, source));
+    emit(event(type, source, type === "focus-at" ? { focus: details.focus } : {}));
   }
 
   function interrupt(reason = "interrupted") {

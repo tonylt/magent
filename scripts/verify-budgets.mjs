@@ -40,6 +40,8 @@ function referencesFor(file, source) {
   } else if (extension === ".js" || extension === ".mjs") {
     const moduleImport = /(?:\bimport\s*(?:[^"']*?\sfrom\s*)?|\bexport\s+[^"']*?\sfrom\s*|\bimport\s*\()\s*["']([^"']+)["']/g;
     while ((match = moduleImport.exec(source))) references.push(match[1]);
+    const fetchedAsset = /\bfetch\(\s*["']([^"']+)["']/g;
+    while ((match = fetchedAsset.exec(source))) references.push(match[1]);
   } else if (extension === ".css") {
     const cssReference = /(?:@import\s+(?:url\()?|url\()\s*["']?([^"')\s]+)["']?\)?/gi;
     while ((match = cssReference.exec(source))) references.push(match[1]);
@@ -91,4 +93,3 @@ try {
   console.error(`S01 asset budget verification failed: ${error.message}`);
   process.exitCode = 1;
 }
-

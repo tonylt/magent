@@ -44,9 +44,9 @@ export function createRabbitBridgeAdapter({
   let lifecycleState = document?.visibilityState === "hidden" ? "background" : "foreground";
   let nextRequestId = 1;
 
-  function dispatchWhenForeground(type, source) {
+  function dispatchWhenForeground(type, source, details) {
     if (disposed || lifecycleState === "background") return false;
-    dispatchInput(type, source);
+    dispatchInput(type, source, details);
     return true;
   }
 
@@ -182,6 +182,7 @@ export function createRabbitBridgeAdapter({
     startSpeech,
     stopSpeech,
     cancelSpeech,
+    sendInput: dispatchWhenForeground,
     dispose,
     isVoiceActive: () => Boolean(activeVoiceRequest),
   };

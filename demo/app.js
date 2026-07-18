@@ -4,6 +4,9 @@ import { createInitialProbeState, reduceProbeState } from "./lib/probe-store.js"
 import { createRabbitBridgeAdapter } from "./lib/rabbit-bridge-adapter.js";
 
 const app = document.querySelector("#app");
+const budgetResponse = await fetch("./budgets.json");
+if (!budgetResponse.ok) throw new Error("probe budget manifest unavailable");
+const budgets = await budgetResponse.json();
 
 const agents = [
   { title: "Creation probe", meta: "CODEX · RUNNING · ROOT" },
@@ -14,7 +17,10 @@ const agents = [
   },
 ];
 
-const diagnostics = createDiagnosticLog();
+const diagnostics = createDiagnosticLog({
+  capacity: budgets.diagnostics.entries,
+  maxBytes: budgets.diagnostics.serializedBytes,
+});
 let state = createInitialProbeState({ itemCount: agents.length });
 let activeVoiceRequest = null;
 let mockVoiceRequest = null;
@@ -22,6 +28,7 @@ let requestSequence = 0;
 
 function inputCommand(type) {
   if (["previous", "next", "select", "back"].includes(type)) return type;
+  if (type === "focus-at") return "focus";
   if (type === "hold-start") return "voice-start";
   if (type === "hold-end" || type === "hold-limit") return "voice-stop";
   return "interrupt";
@@ -181,7 +188,7 @@ function handleCommand(event) {
     return;
   }
 
-  dispatch({ type: event.type });
+  dispatch({ type: event.type, focus: event.focus });
 }
 
 function escapeHtml(value) {
@@ -210,8 +217,8 @@ function renderHome() {
   app.querySelectorAll(".row").forEach((row) => {
     row.addEventListener("pointerup", () => {
       const focus = Number(row.dataset.index);
-      if (state.focus === focus) controller.handle("select", "touch");
-      else dispatch({ type: "focus-at", focus });
+      if (state.focus === focus) bridge.sendInput("select", "touch");
+      else bridge.sendInput("focus-at", "touch", { focus });
     });
   });
 }
@@ -233,7 +240,7 @@ function renderDiagnostics() {
       <ul class="diagnostics">${rows.map(([key, value, ok]) => `<li><span>${key}</span><strong class="${ok ? "yes" : "no"}">${value}</strong></li>`).join("")}</ul>
       <button class="back" type="button">&larr; BACK</button>
     </section>`;
-  app.querySelector(".back").addEventListener("click", () => controller.handle("back", "touch"));
+  app.querySelector(".back").addEventListener("click", () => bridge.sendInput("back", "touch"));
 }
 
 function renderTransport() {
@@ -248,7 +255,7 @@ function renderTransport() {
       </ul>
       <button class="back" type="button">&larr; BACK</button>
     </section>`;
-  app.querySelector(".back").addEventListener("click", () => controller.handle("back", "touch"));
+  app.querySelector(".back").addEventListener("click", () => bridge.sendInput("back", "touch"));
 }
 
 function renderVoice() {

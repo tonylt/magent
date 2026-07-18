@@ -82,6 +82,8 @@ test("hidden lifecycle interrupts an active hold without producing a transcript"
   });
   await expect(page.locator("#app")).toHaveAttribute("data-view", "home");
   await expect(page.locator("#app")).not.toContainText("Show me the latest agent status.");
+  await page.locator(".row").nth(2).dispatchEvent("pointerup");
+  await expect(page.locator('[aria-current="true"] .row-title')).toContainText("Creation probe");
   await page.evaluate(() => {
     dispatchEvent(new Event("pageshow"));
     dispatchEvent(new Event("scrollDown"));
