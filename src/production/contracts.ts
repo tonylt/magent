@@ -135,6 +135,7 @@ export interface ShellState {
 
 export interface ProductionShell {
   start(): Promise<void>;
+  dispatch(command: SemanticCommand): "accepted" | "background" | "not-ready" | "disposed";
   state(): ShellState;
   dispose(): void;
 }

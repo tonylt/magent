@@ -6,6 +6,7 @@ import type {
   ProductionShell,
   ShellState,
   ShellViewModel,
+  SemanticCommand,
 } from "./contracts.ts";
 
 export function createProductionShell({
@@ -25,14 +26,24 @@ export function createProductionShell({
   let started = false;
   let disposed = false;
   let unsubscribe: (() => void) | null = null;
+  let currentViewModel: ShellViewModel | null = null;
+
+  function emit(viewModel: ShellViewModel): void {
+    currentViewModel = viewModel;
+    render(viewModel);
+  }
 
   function updateState(next: Partial<ShellState>): void {
     current = { ...current, ...next };
   }
 
   function handlePlatformEvent(event: PlatformEvent): void {
-    if (disposed || event.type !== "lifecycle") return;
-    updateState({ lifecycle: event.state });
+    if (disposed) return;
+    if (event.type === "lifecycle") {
+      updateState({ lifecycle: event.state });
+      return;
+    }
+    if (event.type === "command") dispatch(event.command);
   }
 
   function renderDecision(snapshot: CapabilitySnapshot): void {
@@ -44,7 +55,7 @@ export function createProductionShell({
     });
 
     if (decision.compatibility === "supported") {
-      render({
+      emit({
         screen: "ready",
         title: "PASEO R1",
         status: "READY FOR RELAY",
@@ -55,7 +66,7 @@ export function createProductionShell({
     }
 
     if (decision.compatibility === "limited") {
-      render({
+      emit({
         screen: "limited",
         title: "LIMITED",
         status: "READ ONLY",
@@ -65,7 +76,7 @@ export function createProductionShell({
       return;
     }
 
-    render({
+    emit({
       screen: "unsupported",
       title: "UNSUPPORTED",
       status: "NO DATA",
@@ -78,7 +89,7 @@ export function createProductionShell({
     if (started || disposed) return;
     started = true;
     updateState({ status: "probing" });
-    render({
+    emit({
       screen: "checking",
       title: "CHECKING DEVICE",
       status: "NO DATA",
@@ -89,6 +100,24 @@ export function createProductionShell({
     const snapshot = await adapter.inspectCapabilities();
     if (disposed) return;
     renderDecision(snapshot);
+  }
+
+  function dispatch(
+    command: SemanticCommand,
+  ): "accepted" | "background" | "not-ready" | "disposed" {
+    if (disposed) return "disposed";
+    if (current.lifecycle === "background") return "background";
+    if (current.status !== "ready" || currentViewModel?.screen !== "ready") return "not-ready";
+    if (command.type === "hold-start" || command.type === "hold-end") return "not-ready";
+
+    let focus = current.focus;
+    if (command.type === "previous") focus = Math.max(0, focus - 1);
+    else if (command.type === "next") focus = Math.min(1, focus + 1);
+    else if (command.type === "focus-at") focus = Math.max(0, Math.min(1, Math.trunc(command.index)));
+
+    updateState({ focus });
+    emit({ ...currentViewModel, focus });
+    return "accepted";
   }
 
   function dispose(): void {
@@ -102,6 +131,7 @@ export function createProductionShell({
 
   return {
     start,
+    dispatch,
     state: () => ({ ...current }),
     dispose,
   };
