@@ -48,6 +48,7 @@ export function createBrowserPlatformAdapter({
       function keyCommand(event: Event): SemanticCommand | null {
         const keyboard = event as KeyboardEvent;
         if (keyboard.repeat) return null;
+        if (event.type === "keyup" && keyboard.key !== " ") return null;
         if (keyboard.key === "ArrowUp") return { type: "previous" };
         if (keyboard.key === "ArrowDown") return { type: "next" };
         if (keyboard.key === "Enter") return { type: "activate" };
