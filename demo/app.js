@@ -9,6 +9,9 @@ import { createRabbitBridgeAdapter } from "./lib/rabbit-bridge-adapter.js";
 // top-level await support, or stale cache) from a runtime error it also captures.
 window.__probeStarted = true;
 
+// Probe version, surfaced on device (TRANSPORT view) as self-identifying H01 evidence.
+const PROBE_VERSION = "s02-1";
+
 const app = document.querySelector("#app");
 
 const DEFAULT_BUDGETS = { diagnostics: { entries: 64, serializedBytes: 16384 } };
@@ -262,9 +265,9 @@ function renderTransport() {
       <h1>${navigator.onLine ? "Network available" : "Offline"}</h1>
       <p class="screen-copy">Loaded over <strong>${location.protocol.replace(":", "").toUpperCase()}</strong>. A real Creation install requires a reachable HTTPS URL; backend sockets must use WSS.</p>
       <ul class="diagnostics">
-        <li><span>HOST</span><strong>${location.hostname ? "LOCAL DEV" : "LOCAL FILE"}</strong></li>
+        <li><span>ORIGIN</span><strong class="yes">${deriveOriginClass(location).toUpperCase()}</strong></li>
         <li><span>ONLINE EVENT</span><strong class="yes">READY</strong></li>
-        <li><span>APP VERSION</span><strong>S01</strong></li>
+        <li><span>APP VERSION</span><strong>${escapeHtml(PROBE_VERSION.toUpperCase())}</strong></li>
       </ul>
       <button class="back" type="button">&larr; BACK</button>
     </section>`;
@@ -330,7 +333,6 @@ diagnostics.record("boot", {
 // evidence capture can never block first paint or blank the screen.
 let evidence = null;
 try {
-  const PROBE_VERSION = "s02-1";
   evidence = createEvidenceCollector({
     version: PROBE_VERSION,
     digest: document.querySelector('meta[name="probe-digest"]')?.content ?? "",
