@@ -34,3 +34,47 @@ The prototype demonstrates the confirmed Phase 2 interaction contract. Tested fi
 - `S`: make the next send fail
 
 Review individual states with `?screen=home|attention-overflow|pairing|pairing-progress|pair-failed|paired|first-load|connecting|syncing|stale|auth-required|revoked|security-blocked|limited|firmware-unsupported|workspace|related-workspace|agent|subagents|child-agent|actions|permission|grant-required|device-lock-required|host-mismatch|session-expired|foreign-draft|composer|voice|transcribing|voice-failed|send-failed|unknown|stop|stop-grant-required|stopping|stop-failed|turn-changed`.
+
+## Development and verification
+
+```bash
+npm ci
+npm run verify          # S01 probe + production unit tests, budgets, source/output boundary, browser
+npm run build           # bundle the production shell to dist/production
+npm run release         # package an immutable versioned release to dist/r1/v<version>/ + install.html
+npm run verify:release  # re-verify the release (digests, strict CSP, no remote/dynamic imports)
+```
+
+Layout:
+
+- `demo/` — the S02 owned-R1 capability probe (installed on the device).
+- `src/production/` — the production Creation shell, platform adapters, capability gate, and the pinned Relay compatibility tracer/negotiation.
+- `scripts/` — build, immutable-release packaging/verification, and the LAN HTTPS dev server.
+- `.gsd/` — milestone roadmap, per-slice plans/summaries, and execution state.
+
+## Real-device testing on Rabbit R1 (S02)
+
+RabbitOS Creations install only from a trusted HTTPS origin. A LAN self-signed
+certificate is rejected by the R1 WebView and shows a black screen (recorded as
+H19), so use GitHub Pages, which serves a publicly trusted certificate. The probe
+holds no secrets and reaches no daemon, so public static hosting is safe.
+
+One-time setup:
+
+1. On GitHub, open **Settings → Pages** for `tonylt/magent` and set **Source: GitHub Actions**.
+2. The `Deploy probe to GitHub Pages` workflow publishes `demo/` on each push to `main`
+   (or run it manually from the **Actions** tab).
+
+Per device:
+
+1. Open `https://tonylt.github.io/magent/install.html` in a browser and scan the QR with
+   Rabbit R1 Creations. Bump `?v=` in `demo/install.html` after each deploy to bust the
+   Creation URL cache.
+2. Open the app with `https://tonylt.github.io/magent/?evidence=1` to expose the sanitized
+   `window.__probeEvidence` capture hook. Run the H01–H24 matrix in
+   [`.gsd/milestones/M001/S02-HARDWARE-UAT.md`](.gsd/milestones/M001/S02-HARDWARE-UAT.md),
+   then save the redacted `__probeEvidence.export()` bundle under `artifacts/hardware/s02/`.
+
+The evidence export is allowlist-validated and payload-free (no token, transcript, raw
+audio, URL, credential, Device ID, network address, or Relay offer). For a LAN
+alternative and full details, see [`demo/README.md`](demo/README.md).
