@@ -59,9 +59,9 @@ export.
 | H02 | Cache-busted upgrade | New immutable version loads after reinstall; old version remains immutable | PENDING | - | |
 | H03 | Portrait canvas | Exact 240x292 CSS viewport, no document/app overflow, full return path | PENDING | - | Owner-observed viewport 240x292; retargeted the fixed canvas 282->292 across app/tests/screenshots. Reinstall (?v=7) and confirm no overflow and full return path on device |
 | H04 | Landscape gate | No product data/action appears; portrait resumes prior state/focus | PENDING | - | |
-| H05 | Wheel mapping | Physical direction, event names, rate, rapid ticks, boundaries, feedback latency measured | PENDING | - | |
-| H06 | Side short click | One deliberate click produces exactly one semantic activation | PENDING | - | |
-| H07 | Hold/release | Start/end ordering, duplicate/missing edges, held click, delayed release, late-click window measured | PENDING | - | |
+| H05 | Wheel mapping | Physical direction, event names, rate, rapid ticks, boundaries, feedback latency measured | PENDING | - | Owner-observed: highlight moved opposite to the wheel and was over-sensitive. Applied device calibration (invert scrollUp/scrollDown + 80ms throttle) on Rabbit host; reinstall ?v=8 and re-confirm direction and feel |
+| H06 | Side short click | One deliberate click produces exactly one semantic activation | PASS | S02-E006 | Owner-observed: a single side-click selects exactly once |
+| H07 | Hold/release | Start/end ordering, duplicate/missing edges, held click, delayed release, late-click window measured | PENDING | - | Owner-observed: long-press produced no response. Added candidate hold-event mappings and an on-screen LAST EVT monitor (CAPABILITIES view). Hold the side button there and report the event name — none means side-button PTT does not reach the WebView (likely OS-reserved), a BLOCKER needing a touch fallback for dictation |
 | H08 | Voice limits | Too-short threshold, 30-second cap, lost result, background interruption, reentry behavior measured | PENDING | - | |
 | H09 | Native STT success | Native bridge starts/stops and returns one correlated non-empty result without auto-send | PENDING | - | Do not store transcript. VOICE BRIDGE FOUND (owner-observed); confirm hold->speak->transcript on device |
 | H10 | Native STT failure | Empty/malformed/late/failed result is visible and recoverable; old result cannot bind a new request | PENDING | - | |

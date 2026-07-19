@@ -117,8 +117,29 @@ const controller = createInputController({
   lateClickSuppressionMs: 500,
 });
 
+// Rabbit-host device calibration (H05/H07). On the owned R1 the wheel direction is
+// inverted vs the assumed mapping and fires too fast; throttle and invert there only.
+const rabbitHost = typeof window.CreationVoiceHandler !== "undefined"
+  || typeof window.creationStorage !== "undefined";
+const recentNativeEvents = [];
+function recordNativeEvent(type) {
+  recentNativeEvents.push(type);
+  while (recentNativeEvents.length > 6) recentNativeEvents.shift();
+  if (state.view === "diagnostics") render();
+}
+// Discovery: listen for candidate long-press/side event names not already mapped, so
+// the on-screen monitor reveals what the side-button hold actually fires (H07).
+const DISCOVERY_EVENTS = [
+  "longpress", "longPress", "sideButtonDown", "sideButtonUp",
+  "sideDown", "sideUp", "buttonPress", "longpressstart", "longpressend",
+];
+for (const name of DISCOVERY_EVENTS) window.addEventListener(name, () => recordNativeEvent(name));
+
 const bridge = createRabbitBridgeAdapter({
   controller,
+  invertWheel: rabbitHost,
+  wheelMinIntervalMs: rabbitHost ? 80 : 0,
+  onNativeEvent: recordNativeEvent,
   onTranscript({ requestId, transcript }) {
     if (requestId !== activeVoiceRequest) return;
     activeVoiceRequest = null;
@@ -307,7 +328,7 @@ function renderDiagnostics() {
   app.innerHTML = `${renderHeader("CAPABILITIES")}
     <section class="screen">
       <h1>Bridge report</h1>
-      <p class="screen-copy">Browser absences are expected. Scan the install QR to measure RabbitOS.</p>
+      <p class="screen-copy">LAST EVT: ${escapeHtml(recentNativeEvents.slice(-4).join(" ")) || "—"}</p>
       <ul class="diagnostics">${rows.map(([key, value, ok]) => `<li><span>${key}</span><strong class="${ok ? "yes" : "no"}">${value}</strong></li>`).join("")}</ul>
       <button class="back" type="button">&larr; BACK</button>
     </section>`;

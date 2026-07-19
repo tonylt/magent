@@ -4,6 +4,11 @@ const NATIVE_INPUTS = {
   sideClick: "select",
   longPressStart: "hold-start",
   longPressEnd: "hold-end",
+  // Candidate long-press/PTT event names to try on RabbitOS (H07 calibration).
+  sideLongPressStart: "hold-start",
+  sideLongPressEnd: "hold-end",
+  pttStart: "hold-start",
+  pttEnd: "hold-end",
 };
 
 function defaultCapabilities(host, document) {
@@ -25,6 +30,9 @@ export function createRabbitBridgeAdapter({
   onTranscript = () => {},
   onVoiceError = () => {},
   onLifecycle = () => {},
+  invertWheel = false,
+  wheelMinIntervalMs = 0,
+  onNativeEvent = () => {},
 } = {}) {
   if (!host?.addEventListener || !host?.removeEventListener) {
     throw new TypeError("host must provide DOM event methods");
@@ -55,8 +63,21 @@ export function createRabbitBridgeAdapter({
     cleanups.push(() => target?.removeEventListener?.(type, listener));
   }
 
+  const SCROLL_SWAP = { previous: "next", next: "previous" };
+  const isScroll = (command) => command === "previous" || command === "next";
+  let lastScrollAt = 0;
   for (const [nativeEvent, command] of Object.entries(NATIVE_INPUTS)) {
-    listen(host, nativeEvent, () => dispatchWhenForeground(command, "rabbit"));
+    listen(host, nativeEvent, () => {
+      onNativeEvent(nativeEvent);
+      let resolved = command;
+      if (isScroll(resolved)) {
+        if (invertWheel) resolved = SCROLL_SWAP[resolved];
+        const now = Date.now();
+        if (wheelMinIntervalMs > 0 && now - lastScrollAt < wheelMinIntervalMs) return;
+        lastScrollAt = now;
+      }
+      dispatchWhenForeground(resolved, "rabbit");
+    });
   }
 
   function handleKeyDown(event) {
