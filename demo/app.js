@@ -1,5 +1,6 @@
 import { createDiagnosticLog } from "./lib/diagnostics.js";
 import { createEvidenceCollector, deriveOriginClass } from "./lib/evidence.js";
+import { createFeedback } from "./lib/feedback.js";
 import { createInputController } from "./lib/input-controller.js";
 import { createInitialProbeState, reduceProbeState } from "./lib/probe-store.js";
 import { createRabbitBridgeAdapter } from "./lib/rabbit-bridge-adapter.js";
@@ -135,6 +136,9 @@ const DISCOVERY_EVENTS = [
 ];
 for (const name of DISCOVERY_EVENTS) window.addEventListener(name, () => recordNativeEvent(name));
 
+// Wheel feedback (click tone + haptic) on the owned R1 when the selection moves.
+const feedback = createFeedback({ enabled: rabbitHost });
+
 const bridge = createRabbitBridgeAdapter({
   controller,
   invertWheel: rabbitHost,
@@ -262,10 +266,13 @@ function handleCommand(event) {
     return;
   }
 
+  const beforeFocus = state.focus;
   dispatch({ type: event.type, focus: event.focus });
+  if (state.view === "home" && state.focus !== beforeFocus) feedback.tick();
 }
 
 function handleUat(type) {
+  const beforeFocus = uatFocus;
   if (type === "previous") uatFocus = Math.max(0, uatFocus - 1);
   else if (type === "next") uatFocus = Math.min(UAT_ITEMS.length - 1, uatFocus + 1);
   else if (type === "select") {
@@ -280,6 +287,7 @@ function handleUat(type) {
       });
     }
   }
+  if ((type === "previous" || type === "next") && uatFocus !== beforeFocus) feedback.tick();
   render();
 }
 
@@ -430,6 +438,7 @@ window.addEventListener("offline", () => {
 window.addEventListener("beforeunload", () => {
   bridge.dispose();
   controller.dispose();
+  feedback.dispose();
 }, { once: true });
 
 diagnostics.record("boot", {
