@@ -31,7 +31,39 @@ const agents = [
     title: "Transport check",
     meta: `${location.protocol.toUpperCase().replace(":", "")} · ${navigator.onLine ? "ONLINE" : "OFFLINE"}`,
   },
+  { title: "UAT recorder", meta: "S02 · H01-H24" },
 ];
+
+// S02 UAT matrix items, recorded on device with the wheel + side button.
+const UAT_ITEMS = [
+  { id: "H01", area: "Fresh install" },
+  { id: "H02", area: "Cache-bust upgrade" },
+  { id: "H03", area: "Portrait canvas" },
+  { id: "H04", area: "Landscape gate" },
+  { id: "H05", area: "Wheel mapping" },
+  { id: "H06", area: "Side click" },
+  { id: "H07", area: "Hold/release" },
+  { id: "H08", area: "Voice limits" },
+  { id: "H09", area: "Native STT ok" },
+  { id: "H10", area: "Native STT fail" },
+  { id: "H11", area: "CJK rendering" },
+  { id: "H12", area: "OSK behavior" },
+  { id: "H13", area: "Secure store" },
+  { id: "H14", area: "Store R/W" },
+  { id: "H15", area: "Store restart" },
+  { id: "H16", area: "Store TTL" },
+  { id: "H17", area: "Store corrupt" },
+  { id: "H18", area: "Device lock" },
+  { id: "H19", area: "HTTPS" },
+  { id: "H20", area: "WSS" },
+  { id: "H21", area: "Offline/online" },
+  { id: "H22", area: "Suspend/resume" },
+  { id: "H23", area: "Resource base" },
+  { id: "H24", area: "Diag privacy" },
+];
+const UAT_RESULT_CYCLE = ["PENDING", "PASS", "FALLBACK", "BLOCKER"];
+const uatResults = UAT_ITEMS.map(() => "PENDING");
+let uatFocus = 0;
 
 const diagnostics = createDiagnosticLog({
   capacity: budgets.diagnostics.entries,
@@ -204,7 +236,30 @@ function handleCommand(event) {
     return;
   }
 
+  if (state.view === "uat" && (event.type === "previous" || event.type === "next" || event.type === "select")) {
+    handleUat(event.type);
+    return;
+  }
+
   dispatch({ type: event.type, focus: event.focus });
+}
+
+function handleUat(type) {
+  if (type === "previous") uatFocus = Math.max(0, uatFocus - 1);
+  else if (type === "next") uatFocus = Math.min(UAT_ITEMS.length - 1, uatFocus + 1);
+  else if (type === "select") {
+    const current = uatResults[uatFocus];
+    const next = UAT_RESULT_CYCLE[(UAT_RESULT_CYCLE.indexOf(current) + 1) % UAT_RESULT_CYCLE.length];
+    uatResults[uatFocus] = next;
+    if (evidence) {
+      evidence.recordResult({
+        id: UAT_ITEMS[uatFocus].id,
+        result: next,
+        evidenceId: `S02-E${String(uatFocus + 1).padStart(3, "0")}`,
+      });
+    }
+  }
+  render();
 }
 
 function escapeHtml(value) {
@@ -292,6 +347,39 @@ function renderComposer() {
     </section>`;
 }
 
+function renderUat() {
+  const caps = bridge.capabilities();
+  const total = UAT_ITEMS.length;
+  const windowSize = 3;
+  const start = Math.max(0, Math.min(uatFocus - 1, total - windowSize));
+  const summary = `${caps.viewport} · VOICE ${caps.voice ? "FOUND" : "MOCK"} · STORE ${caps.secureStorage ? "FOUND" : "ABSENT"}`;
+  app.innerHTML = `
+    ${renderHeader("UAT H01-H24")}
+    <section class="context"><div class="eyebrow">${escapeHtml(summary)}</div><div class="context-title">${uatFocus + 1} / ${total} · S02-E${String(uatFocus + 1).padStart(3, "0")}</div></section>
+    <section class="list" aria-label="UAT items">
+      ${UAT_ITEMS.slice(start, start + windowSize).map((item, offset) => {
+        const index = start + offset;
+        return `
+        <button class="row" type="button" data-uat="${index}" aria-current="${uatFocus === index}">
+          <span class="row-title"><span class="dot"></span>${item.id} ${escapeHtml(item.area)}</span>
+          <span class="row-meta">${uatResults[index]}</span>
+        </button>`;
+      }).join("")}
+    </section>
+    <footer class="rail"><span>BACK = HOME</span><span><strong>CLICK</strong> CYCLES RESULT</span></footer>`;
+
+  app.querySelectorAll(".row").forEach((row) => {
+    row.addEventListener("pointerup", () => {
+      const index = Number(row.dataset.uat);
+      if (uatFocus === index) bridge.sendInput("select", "touch");
+      else {
+        uatFocus = index;
+        render();
+      }
+    });
+  });
+}
+
 function render() {
   app.dataset.view = state.view;
   if (state.view === "home") renderHome();
@@ -299,6 +387,7 @@ function render() {
   else if (state.view === "transport") renderTransport();
   else if (state.view === "voice") renderVoice();
   else if (state.view === "composer") renderComposer();
+  else if (state.view === "uat") renderUat();
 
   diagnostics.record("navigation", {
     view: state.view,

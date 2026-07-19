@@ -1,5 +1,5 @@
 const DEFAULT_ITEM_COUNT = 3;
-const VALID_VIEWS = new Set(["home", "diagnostics", "transport", "voice", "composer"]);
+const VALID_VIEWS = new Set(["home", "diagnostics", "transport", "voice", "composer", "uat"]);
 
 function normalizeItemCount(value) {
   const count = Number(value);
@@ -65,7 +65,7 @@ export function reduceProbeState(currentState, action = {}) {
       if (state.view !== "home" || state.itemCount === 0) return state;
       return {
         ...state,
-        view: state.focus === 2 ? "transport" : "diagnostics",
+        view: state.focus === 2 ? "transport" : state.focus === 3 ? "uat" : "diagnostics",
       };
 
     case "back":

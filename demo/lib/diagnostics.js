@@ -27,7 +27,7 @@ const EVENT_FIELDS = Object.freeze({
     code: oneOf("duplicate", "wrong-state", "late-click", "hidden", "timeout", "unavailable"),
   },
   navigation: {
-    view: oneOf("home", "diagnostics", "transport", "voice", "composer"),
+    view: oneOf("home", "diagnostics", "transport", "voice", "composer", "uat"),
     focus: integer,
     result: oneOf("entered", "restored", "unchanged"),
   },

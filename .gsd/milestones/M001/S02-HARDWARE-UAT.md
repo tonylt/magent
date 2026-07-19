@@ -28,15 +28,19 @@ The probe ships a sanitized, bounded, payload-free evidence collector
 structured capability/result metadata — never a token, transcript, raw audio, URL,
 credential, Device ID, network address, or Relay offer.
 
-On the owned R1, install the probe with the `?evidence` flag (for example
-`https://<lan-ip>:4173/demo/?evidence=1`) to expose the capture hook on `window`:
+On-device recorder (no console required): from Home, wheel to **UAT recorder** and
+side-click to open it. The wheel moves between H01–H24, each side-click cycles the
+focused item `PENDING → PASS → FALLBACK → BLOCKER`, and the header shows the live
+viewport, voice-bridge, and secure-storage state plus the evidence ID. Screenshot the
+list and the CAPABILITIES/TRANSPORT screens as the redacted evidence artifacts. Each
+recorded result is mirrored into the evidence collector under `S02-E0<index>`.
+
+Where a JS console is available (`chrome://inspect`), the same hook is on `window`:
 
 ```js
-// Firmware/viewport/capabilities/origin class are captured headlessly on boot.
 __probeEvidence.setFirmware("tested");                 // human decision on device
 __probeEvidence.recordResult({ id: "H05", result: "PASS", evidenceId: "S02-E001" });
 __probeEvidence.recordMeasurement("lateClickSuppressionMs", 420);
-__probeEvidence.recordMeasurement("wheelDirection", "up-forward");
 __probeEvidence.recordResourceSample({ elapsedMinutes: 30, domNodes: 118, timers: 3 });
 __probeEvidence.setProductMode("PRIVATE_READ_ONLY");
 const bundle = __probeEvidence.export();               // review, then save under artifacts/hardware/s02/
