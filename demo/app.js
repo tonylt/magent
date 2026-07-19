@@ -354,7 +354,10 @@ try {
 }
 
 const search = new URLSearchParams(location.search);
-if (evidence && search.has("evidence")) {
+// Always expose the sanitized, payload-free evidence hook: the probe is a test
+// artifact, and on the owned R1 the installed URL is fixed by the QR (no query), so
+// gating on ?evidence would make chrome://inspect capture impossible on device.
+if (evidence) {
   window.__probeEvidence = Object.freeze({
     export: () => evidence.export(),
     setFirmware: (status) => evidence.setFirmware(status),
