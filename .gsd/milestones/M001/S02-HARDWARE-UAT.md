@@ -51,7 +51,7 @@ export.
 
 | ID | Area | Expected evidence | Result | Evidence ID | Notes |
 |---|---|---|---|---|---|
-| H01 | Fresh install | QR installs immutable probe; exact firmware, viewport, version, digest, origin class recorded | PENDING | - | |
+| H01 | Fresh install | QR installs immutable probe; exact firmware, viewport, version, digest, origin class recorded | PENDING | - | Installs and runs from GitHub Pages trusted origin (owner-observed 2026-07-19); capture export/screenshot for evidence ID and record firmware/version/digest |
 | H02 | Cache-busted upgrade | New immutable version loads after reinstall; old version remains immutable | PENDING | - | |
 | H03 | Portrait canvas | Exact 240x282 CSS viewport, no document/app overflow, full return path | PENDING | - | |
 | H04 | Landscape gate | No product data/action appears; portrait resumes prior state/focus | PENDING | - | |
@@ -69,7 +69,7 @@ export.
 | H16 | Storage suspend/TTL | Suspend/resume, expiry, capacity boundary, and no stale secure result are measured | PENDING | - | |
 | H17 | Storage corruption/wipe | Invalid schema/corruption fails closed and synthetic data is wiped on reset/invalidation | PENDING | - | |
 | H18 | Device lock | Reliable RabbitOS lock exists, can be enabled, gates access after wake, and is documented for this firmware | PENDING | - | No daemon attestation claim |
-| H19 | HTTPS | Trusted origin loads with normal certificate validation; failure is visible | PENDING | - | LAN self-signed cert rejected by the WebView (black screen, no error UI); retest on GitHub Pages trusted cert |
+| H19 | HTTPS | Trusted origin loads with normal certificate validation; failure is visible | PENDING | - | GitHub Pages trusted origin loads/installs/runs (owner-observed 2026-07-19); LAN self-signed cert rejected (black screen). Capture screenshot for evidence ID |
 | H20 | WSS | Trusted test endpoint connects with certificate validation; offline/failure/recovery visible | PENDING | - | Not Relay/E2EE proof |
 | H21 | Offline/online | Network transitions are observed without unbounded retries or false success | PENDING | - | |
 | H22 | Suspend/resume | Active hold interrupts; background inputs are ignored; foreground restores inputs and exact safe state | PENDING | - | |
