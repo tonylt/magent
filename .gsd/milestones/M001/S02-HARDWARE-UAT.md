@@ -57,17 +57,17 @@ export.
 |---|---|---|---|---|---|
 | H01 | Fresh install | QR installs immutable probe; exact firmware, viewport, version, digest, origin class recorded | PENDING | - | Installs and runs from GitHub Pages trusted origin (owner-observed 2026-07-19); capture export/screenshot for evidence ID and record firmware/version/digest |
 | H02 | Cache-busted upgrade | New immutable version loads after reinstall; old version remains immutable | PENDING | - | |
-| H03 | Portrait canvas | Exact 240x282 CSS viewport, no document/app overflow, full return path | PENDING | - | |
+| H03 | Portrait canvas | Exact 240x282 CSS viewport, no document/app overflow, full return path | PENDING | - | Measured 240x292 (owner-observed 2026-07-19) — 10px taller than the assumed 240x282; retarget the fixed viewport and confirm no overflow |
 | H04 | Landscape gate | No product data/action appears; portrait resumes prior state/focus | PENDING | - | |
 | H05 | Wheel mapping | Physical direction, event names, rate, rapid ticks, boundaries, feedback latency measured | PENDING | - | |
 | H06 | Side short click | One deliberate click produces exactly one semantic activation | PENDING | - | |
 | H07 | Hold/release | Start/end ordering, duplicate/missing edges, held click, delayed release, late-click window measured | PENDING | - | |
 | H08 | Voice limits | Too-short threshold, 30-second cap, lost result, background interruption, reentry behavior measured | PENDING | - | |
-| H09 | Native STT success | Native bridge starts/stops and returns one correlated non-empty result without auto-send | PENDING | - | Do not store transcript |
+| H09 | Native STT success | Native bridge starts/stops and returns one correlated non-empty result without auto-send | PENDING | - | Do not store transcript. VOICE BRIDGE FOUND (owner-observed); confirm hold->speak->transcript on device |
 | H10 | Native STT failure | Empty/malformed/late/failed result is visible and recoverable; old result cannot bind a new request | PENDING | - | |
 | H11 | CJK rendering | Representative user-owned CJK content has correct glyphs, wrapping, ellipsis, and no clipping | PENDING | - | Use non-sensitive fixture |
 | H12 | OSK behavior | Focus, available height, CJK input, dismiss/resume recorded; keyboard remains optional for core path | PENDING | - | |
-| H13 | Secure storage presence | Capability is checked before data; no fallback to localStorage | PENDING | - | |
+| H13 | Secure storage presence | Capability is checked before data; no fallback to localStorage | PENDING | - | SECURE STORE FOUND (owner-observed) — presence confirmed; R/W (H14) and restart (H15) still to verify |
 | H14 | Secure storage R/W | Base64 test record writes, reads, overwrites, and deletes correctly within declared cap | PENDING | - | Synthetic test data only |
 | H15 | Secure storage restart | Record survives full Creation/device restart exactly when contract claims persistence | PENDING | - | |
 | H16 | Storage suspend/TTL | Suspend/resume, expiry, capacity boundary, and no stale secure result are measured | PENDING | - | |
