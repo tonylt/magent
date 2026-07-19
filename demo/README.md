@@ -50,7 +50,8 @@ One-time setup:
    git push -u origin main
    ```
 2. In the repo, open **Settings → Pages** and set **Source: GitHub Actions**.
-3. The `Deploy probe to GitHub Pages` workflow publishes `demo/` on each push to
+3. The `Deploy to GitHub Pages` workflow publishes the probe (`demo/`) at the site root
+   and the immutable production release under `/r1/v<version>/` on each push to
    `main` (or run it manually from the Actions tab).
 
 Then, per device:

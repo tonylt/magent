@@ -62,7 +62,8 @@ holds no secrets and reaches no daemon, so public static hosting is safe.
 One-time setup:
 
 1. On GitHub, open **Settings → Pages** for `tonylt/magent` and set **Source: GitHub Actions**.
-2. The `Deploy probe to GitHub Pages` workflow publishes `demo/` on each push to `main`
+2. The `Deploy to GitHub Pages` workflow publishes the probe (`demo/`) at the site root
+   and the immutable production release at `/r1/v<version>/` on each push to `main`
    (or run it manually from the **Actions** tab).
 
 Per device:

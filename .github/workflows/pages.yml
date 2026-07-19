@@ -1,16 +1,14 @@
-name: Deploy probe to GitHub Pages
+name: Deploy to GitHub Pages
 
-# Publishes the S02 owned-R1 capability probe (demo/) to GitHub Pages so the R1
-# WebView can install it from a publicly trusted HTTPS origin (no self-signed CA,
-# no disabled certificate validation). The probe touches no daemon and holds no
-# secrets, so public static hosting is safe. Production Relay transport is separate.
+# Publishes two things to GitHub Pages over a publicly trusted HTTPS origin (the R1
+# WebView rejects LAN self-signed certs; see H19):
+#   - the S02 owned-R1 capability probe (demo/) at the site root
+#   - the S12 immutable production release at /r1/v<version>/ with a vendored install QR
+# Both hold no secrets and reach no daemon; production Relay transport is separate.
 
 on:
   push:
     branches: [main]
-    paths:
-      - demo/**
-      - .github/workflows/pages.yml
   workflow_dispatch:
 
 permissions:
@@ -32,11 +30,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Configure Pages
+        id: pages
         uses: actions/configure-pages@v5
-      - name: Upload probe artifact
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - name: Package and verify the immutable release
+        run: npm run verify:release
+        env:
+          RELEASE_BASE_URL: ${{ steps.pages.outputs.base_url }}
+      - name: Assemble site (probe at root, immutable release under /r1)
+        run: |
+          rm -rf _site
+          mkdir -p _site/r1
+          cp -R demo/. _site/
+          cp -R dist/r1/. _site/r1/
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: demo
+          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
