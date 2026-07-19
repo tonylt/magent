@@ -33,7 +33,7 @@ test("checks device capabilities before rendering a Rabbit shell as limited", as
   const adapter = createAdapter({
     platform: "rabbit",
     lifecycle: "foreground",
-    viewport: { width: 240, height: 282, orientation: "portrait" },
+    viewport: { width: 240, height: 292, orientation: "portrait" },
     firmware: { status: "unknown" },
     features: {
       semanticInput: "available",

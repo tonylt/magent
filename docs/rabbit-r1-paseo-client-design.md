@@ -48,7 +48,7 @@ The MVP runs as a RabbitOS Creation, a hosted WebView application installed from
 
 The following constraints are treated as product requirements:
 
-- The effective Creation viewport is 240 by 282 CSS pixels. The physical display resolution is not the application layout size.
+- The effective Creation viewport is 240 by 292 CSS pixels. The physical display resolution is not the application layout size.
 - The scroll wheel dispatches discrete up and down events. It should move selection, not imitate high-resolution inertial scrolling.
 - The side button provides short-click and press-and-hold events. Push-to-talk is the primary composition path.
 - Native speech-to-text returns a completed transcript through the Creation bridge. The client does not own raw microphone streaming in the MVP.
@@ -384,7 +384,7 @@ Browser simulation is useful but not sufficient. The release gate requires a rea
 - Attention-directory tests for attention-first ordering, stable continuation, overflow counts, and `MORE ATTENTION IN PASEO` without silent loss
 - Action-capability tests across target type, lifecycle, pending Permission, transport/freshness/auth/compatibility, grant, the local device-lock gate, turn identity, and server-side enforcement of daemon-verifiable conditions
 - Attention-clear tests for version/source identity, Meaningful-content readiness, idempotent clear, failure retention, and cross-client results
-- Layout screenshots at exactly 240×282 CSS pixels
+- Layout screenshots at exactly 240×292 CSS pixels
 - Bundle-size and maximum-DOM-node checks
 
 ### 11.2 Hardware Scenarios

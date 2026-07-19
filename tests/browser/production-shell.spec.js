@@ -34,9 +34,9 @@ test("@production browser and Rabbit fixtures run the same capability-first shel
   await expect(page.locator('[aria-current="true"]')).toContainText("RELAY NOT CONFIGURED");
   const browserText = await page.locator("#app").innerText();
   expect(await shellGeometry(page)).toEqual({
-    viewport: [240, 282],
-    document: [240, 282],
-    app: [240, 282],
+    viewport: [240, 292],
+    document: [240, 292],
+    app: [240, 292],
   });
   const domBudget = await page.evaluate(async () => {
     const budgets = await fetch("./budgets.json").then((response) => response.json());
@@ -92,9 +92,9 @@ test("@production relay negotiation reaches relay-compatible ready", async ({ pa
   await expect(page.locator("#app")).not.toContainText("WORKSPACE");
   await expect(page).toHaveScreenshot("production-relay-ready.png");
   expect(await shellGeometry(page)).toEqual({
-    viewport: [240, 282],
-    document: [240, 282],
-    app: [240, 282],
+    viewport: [240, 292],
+    document: [240, 292],
+    app: [240, 292],
   });
   expect(failures).toEqual([]);
 });

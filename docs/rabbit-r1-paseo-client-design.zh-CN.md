@@ -48,7 +48,7 @@ MVP 以 RabbitOS Creation 运行。Creation 是由 QR payload 安装的托管 We
 
 以下约束作为产品要求处理：
 
-- Creation 的有效 viewport 是 240×282 CSS pixels，物理屏幕分辨率不是应用布局尺寸。
+- Creation 的有效 viewport 是 240×292 CSS pixels，物理屏幕分辨率不是应用布局尺寸。
 - 滚轮产生离散的向上和向下事件，应移动选择项，而不是模拟高分辨率惯性滚动。
 - 侧键提供短按和按住事件，按住说话是主要输入方式。
 - 原生语音转写通过 Creation bridge 返回完整 transcript；MVP 不自行传输原始麦克风音频。
@@ -401,7 +401,7 @@ Browser simulation 有用，但不足以作为发布依据；release gate 必须
 - Attention directory：attention-first 排序、稳定 continuation、overflow count，以及不静默漏报的 `MORE ATTENTION IN PASEO`
 - Action capability：target type、lifecycle、permission pending、transport/freshness/auth/compatibility、grant、本地 device-lock gate、turn identity，以及 daemon 可验证条件的服务端二次 enforcement
 - Attention clear：version/source identity、Meaningful content readiness、幂等 clear、失败保留和跨客户端结果
-- 精确 240×282 CSS pixels 的布局截图
+- 精确 240×292 CSS pixels 的布局截图
 - Bundle size 和最大 DOM node 数检查
 
 ### 11.2 硬件场景

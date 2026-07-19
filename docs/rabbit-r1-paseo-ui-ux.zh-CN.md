@@ -6,7 +6,7 @@
 
 ## 1. 设计命题
 
-Rabbit R1 不是小手机。它的 240×282 Creation viewport、离散滚轮、单侧键/PTT 和短时使用习惯，要求 Paseo 把“完整管理工具”重新定义成“口袋任务仪表”。
+Rabbit R1 不是小手机。它的 240×292 Creation viewport、离散滚轮、单侧键/PTT 和短时使用习惯，要求 Paseo 把“完整管理工具”重新定义成“口袋任务仪表”。
 
 首版只服务单个个人 Host 上已有 Agent session 的离桌干预：用户离桌 5–30 分钟后主动打开 R1，在 5–30 秒内处理一个 attention item。产品不负责创建 Agent、Workspace 或 Schedule，也不承诺后台通知或实时唤醒。
 
@@ -23,7 +23,7 @@ Rabbit R1 不是小手机。它的 240×282 Creation viewport、离散滚轮、�
 
 | 硬件/平台特点 | 设计影响 |
 |---|---|
-| 240×282 CSS viewport | 每个视图只承担一个任务；固定 header 与 action rail；正文逐层展开 |
+| 240×292 CSS viewport | 每个视图只承担一个任务；固定 header 与 action rail；正文逐层展开 |
 | 离散滚轮 | 所有列表都必须存在唯一 focus；一格对应一个语义项 |
 | 单侧键 | 短按确认，按住 PTT；破坏性操作不能使用按住快捷方式 |
 | 触摸屏 | 用于加速选择和编辑，不作为核心流程唯一入口 |
@@ -187,7 +187,7 @@ Request kind 与完整性、detail completeness 都是独立必填字段，使�
 
 ### 4.11 Unsupported Orientation
 
-横屏只显示 rotate-back surface，不加载或泄露产品内容，不提供 controlled action。进入横屏时保留内存中的 view、canonical focus、Draft 与阅读页；恢复竖屏后回到完全相同的状态。MVP 不缩放、旋转或重排 240×282 应用画布来适配横屏。
+横屏只显示 rotate-back surface，不加载或泄露产品内容，不提供 controlled action。进入横屏时保留内存中的 view、canonical focus、Draft 与阅读页；恢复竖屏后回到完全相同的状态。MVP 不缩放、旋转或重排 240×292 应用画布来适配横屏。
 
 ## 5. 输入状态机
 
@@ -316,8 +316,8 @@ Online -> network loss -> STALE snapshot -> reconnect
 
 ### 视觉验收
 
-- `#app` 的内容盒精确为 240×282 CSS px；device bezel、border、outline 和 shadow 全在内容盒外，不能因全局 `border-box` 变成 238×280。应用本身不缩放。
-- 每个视图在 240×282 下无横向滚动、非规范裁切和文字覆盖；Composer/Permission 的规范分页不算裁切。
+- `#app` 的内容盒精确为 240×292 CSS px；device bezel、border、outline 和 shadow 全在内容盒外，不能因全局 `border-box` 变成 238×280。应用本身不缩放。
+- 每个视图在 240×292 下无横向滚动、非规范裁切和文字覆盖；Composer/Permission 的规范分页不算裁切。
 - Focus 改变不引发布局位移。
 - 任一 action rail 同屏不超过三项 command。Actions 全屏列表可以同时包含 Back、Subagents 关系导航和最多三个 controlled actions，但必须窗口化且 focus 始终可见。
 - 无 cards inside cards、drawer、bottom sheet、gradient 或 decorative imagery。

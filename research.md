@@ -16,7 +16,7 @@ Mac
        |
        | HTTPS (publicly reachable URL)
        v
-RabbitOS Creation WebView (240x282 CSS px)
+RabbitOS Creation WebView (240x292 CSS px)
   RabbitOS injects hardware events and native bridge objects
        |
        | HTTPS / WSS
@@ -36,12 +36,12 @@ The following behavior is present in the inspected `rabbit-r1-creations-public` 
 <meta name="viewport" content="width=240, initial-scale=1.0, user-scalable=no">
 ```
 
-The app surface is fixed at 240 by 282 CSS pixels. Keep the body bounded and avoid relying on native body scrolling.
+The app surface is fixed at 240 by 292 CSS pixels. Keep the body bounded and avoid relying on native body scrolling.
 
 ```css
 html, body {
   width: 240px;
-  height: 282px;
+  height: 292px;
   margin: 0;
   overflow: hidden;
 }
@@ -256,7 +256,7 @@ const capabilities = {
 
 | Area | Mac browser | Real R1 required |
 |---|---:|---:|
-| 240x282 layout and screenshots | Yes | Final check |
+| 240x292 layout and screenshots | Yes | Final check |
 | Keyboard input mapping | Yes | No |
 | Store and state machines | Yes | No |
 | HTTPS/WSS transport | Yes | Final check |
@@ -267,12 +267,12 @@ const capabilities = {
 | Font metrics and on-screen keyboard | Approximate | Yes |
 | Performance and battery behavior | No | Yes |
 
-Use browser automation at an exact 240 by 282 viewport. Hardware release gates should include fresh QR install, cache-busted upgrade, offline recovery, page suspend/resume, rapid wheel input, side-button hold/release, STT failure, and a 30-minute bounded-resource run.
+Use browser automation at an exact 240 by 292 viewport. Hardware release gates should include fresh QR install, cache-busted upgrade, offline recovery, page suspend/resume, rapid wheel input, side-button hold/release, STT failure, and a 30-minute bounded-resource run.
 
 ## Recommended Paseo Development Sequence
 
 1. Extract a small TypeScript bridge adapter and input controller from the existing prototype.
-2. Add desktop mocks and exact 240x282 automated screenshots.
+2. Add desktop mocks and exact 240x292 automated screenshots.
 3. Add a development diagnostics screen and bounded sanitized event log.
 4. Serve the static client locally and expose it through a temporary HTTPS tunnel.
 5. Generate a JSON install QR with a versioned URL and install it on stock RabbitOS.
@@ -285,7 +285,7 @@ Use browser automation at an exact 240 by 282 viewport. Hardware release gates s
 
 The repository now includes `demo/`, a build-free Phase 0A Creation capability probe. It does not validate Paseo pairing, Relay E2EE, subscription, timeline reconciliation, or commands:
 
-- `demo/index.html`: 240x282 Creation entry point.
+- `demo/index.html`: 240x292 Creation entry point.
 - `demo/app.js`: RabbitOS event adapter, desktop fallbacks, capability report, bounded diagnostics, and native/mock STT flow.
 - `demo/install.html`: JSON Creation payload and generated install QR.
 - `demo/README.md`: local run and deployment instructions.
@@ -296,7 +296,7 @@ Run it from this worktree with:
 python3 -m http.server 4173
 ```
 
-Then open `http://localhost:4173/demo/` and `http://localhost:4173/demo/install.html`. Browser validation on 2026-07-17 confirmed an exact 240x282 viewport with no document overflow, semantic focus movement from a `scrollDown` event, navigation from a `sideClick` event, mock transcript review from `longPressStart`/`longPressEnd`, and QR rendering with a versioned `?v=1` application URL. HTTPS and native bridge results remain real-device checks.
+Then open `http://localhost:4173/demo/` and `http://localhost:4173/demo/install.html`. Browser validation on 2026-07-17 confirmed an exact 240x292 viewport with no document overflow, semantic focus movement from a `scrollDown` event, navigation from a `sideClick` event, mock transcript review from `longPressStart`/`longPressEnd`, and QR rendering with a versioned `?v=1` application URL. HTTPS and native bridge results remain real-device checks.
 
 ## Risks and Open Questions
 

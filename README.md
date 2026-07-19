@@ -16,7 +16,7 @@ The first release targets RabbitOS Creations: a small WebView application instal
 
 ## Prototype
 
-Open `prototype/index.html` directly in a browser. The app viewport remains fixed at 240x282 CSS pixels.
+Open `prototype/index.html` directly in a browser. The app viewport remains fixed at 240x292 CSS pixels.
 
 The prototype demonstrates the confirmed Phase 2 interaction contract. Tested firmware, Device grant, device lock, command reconciliation, and turn-safe Stop are simulated capability states; their presence in the prototype does not imply that the current Paseo backend implements them.
 

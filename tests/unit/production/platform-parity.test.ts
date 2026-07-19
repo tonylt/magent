@@ -19,7 +19,7 @@ interface TestDocument extends EventTarget {
 function createDom() {
   const host = new EventTarget() as TestHost;
   host.innerWidth = 240;
-  host.innerHeight = 282;
+  host.innerHeight = 292;
   host.location = { protocol: "https:" };
   const document = new EventTarget() as TestDocument;
   document.visibilityState = "visible";

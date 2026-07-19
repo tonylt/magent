@@ -2,7 +2,7 @@
 
 Version: 0.1  
 Status: Proposed  
-Target: RabbitOS Creation at a fixed 240x282 CSS pixel viewport
+Target: RabbitOS Creation at a fixed 240x292 CSS pixel viewport
 
 ## 1. Visual Theme And Atmosphere
 
@@ -113,7 +113,7 @@ typography:
 
 ## 4. Spatial System
 
-The application content viewport is exactly 240x282 CSS pixels.
+The application content viewport is exactly 240x292 CSS pixels.
 
 ```yaml
 spacing:
@@ -139,7 +139,7 @@ radius:
 - Every touch target is at least 44px high and 44px wide. Visual rows remain 46px high.
 - List row: 46px in every state, including when an attention label is present.
 - Focus indicator: 2px left rail plus inverted row fill. It must not change row dimensions.
-- The browser prototype's bezel, border, and shadow sit outside `#app`. With global `border-box`, `#app` still has a 240x282 content box; no decorative border may reduce it to 238x280.
+- The browser prototype's bezel, border, and shadow sit outside `#app`. With global `border-box`, `#app` still has a 240x292 content box; no decorative border may reduce it to 238x280.
 
 ## 5. Component Styling
 
@@ -264,7 +264,7 @@ radius:
 
 ## 8. Responsive And Runtime Behavior
 
-- Production layout supports only the 240x282 Creation viewport.
+- Production layout supports only the 240x292 Creation viewport.
 - Browser prototype centers the fixed viewport inside a device-stage preview; the app itself never scales.
 - Portrait is canonical. Landscape is unsupported in the MVP and shows a rotate-back state.
 - The rotate-back state contains no product data or controlled action. It preserves in-memory state and returns to the exact prior view and canonical focus when portrait resumes.
@@ -301,7 +301,7 @@ radius:
 - Keep lifecycle, attention, and connection freshness visually independent.
 - Use short verbs and concrete state labels.
 - Preserve state during reconnect and mark it stale.
-- Test every screen at exactly 240x282.
+- Test every screen at exactly 240x292.
 
 ### Do Not
 
@@ -320,4 +320,4 @@ radius:
 
 When building Paseo for Rabbit R1:
 
-> Build an exact 240x282 content canvas as a dark pocket task instrument; prototype bezel and border live outside that canvas. Start with deduplicated, aged attention items and project/workspace ownership. Workspace lists root Agent sessions; each parent Agent leads to its own Subagents relationship list, where Native subagents are read-only. Keep connection freshness, lifecycle, and attention as separate canonical states. Every list windows around one stable canonical focus; in Agent the wheel browses the windowed timeline only, side click opens Actions, and a fully consumed side hold starts `RECORDING` for that agent. Workspace, Subagents, Actions, Handoff, and Decision/list screens have a focusable Back command. Composer paginates the full transcript with at most Back, Cancel, and Next until the fully reviewed final page exposes Send; Cancel is always selected by default. Agent returns through Actions. Use near-black full-width surfaces, warm off-white text, Rabbit orange only for identity and physical action, dense unframed rows, no nested cards, no gradients, and no raw terminal output. Stop freezes `pendingTargetTurnId` and uses separate confirmation with Cancel selected; Permission is a complete-kind/completeness read-only handoff to full Paseo.
+> Build an exact 240x292 content canvas as a dark pocket task instrument; prototype bezel and border live outside that canvas. Start with deduplicated, aged attention items and project/workspace ownership. Workspace lists root Agent sessions; each parent Agent leads to its own Subagents relationship list, where Native subagents are read-only. Keep connection freshness, lifecycle, and attention as separate canonical states. Every list windows around one stable canonical focus; in Agent the wheel browses the windowed timeline only, side click opens Actions, and a fully consumed side hold starts `RECORDING` for that agent. Workspace, Subagents, Actions, Handoff, and Decision/list screens have a focusable Back command. Composer paginates the full transcript with at most Back, Cancel, and Next until the fully reviewed final page exposes Send; Cancel is always selected by default. Agent returns through Actions. Use near-black full-width surfaces, warm off-white text, Rabbit orange only for identity and physical action, dense unframed rows, no nested cards, no gradients, and no raw terminal output. Stop freezes `pendingTargetTurnId` and uses separate confirmation with Cancel selected; Permission is a complete-kind/completeness read-only handoff to full Paseo.

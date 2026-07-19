@@ -21,7 +21,7 @@ test("rejects an invalid probe version or digest", () => {
 test("captures environment and a matrix result with an evidence id", () => {
   const evidence = createEvidenceCollector({ version: "s02-1", digest: "abc123", originClass: "lan" });
   assert.equal(evidence.setFirmware("tested"), true);
-  assert.equal(evidence.setViewport({ width: 240, height: 282, orientation: "portrait" }), true);
+  assert.equal(evidence.setViewport({ width: 240, height: 292, orientation: "portrait" }), true);
   assert.equal(evidence.setCapabilities({ https: true, secureStorage: false }), true);
   assert.equal(evidence.recordResult({ id: "H05", result: "PASS", evidenceId: "S02-E001" }), true);
 
@@ -29,7 +29,7 @@ test("captures environment and a matrix result with an evidence id", () => {
   assert.equal(bundle.schema, 2);
   assert.deepEqual(bundle.probe, { version: "s02-1", digest: "abc123", originClass: "lan" });
   assert.equal(bundle.environment.firmwareStatus, "tested");
-  assert.deepEqual(bundle.environment.viewport, { width: 240, height: 282, orientation: "portrait" });
+  assert.deepEqual(bundle.environment.viewport, { width: 240, height: 292, orientation: "portrait" });
   assert.deepEqual(bundle.results, [{ id: "H05", result: "PASS", evidenceId: "S02-E001" }]);
 });
 

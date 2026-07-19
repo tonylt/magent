@@ -57,7 +57,7 @@ export.
 |---|---|---|---|---|---|
 | H01 | Fresh install | QR installs immutable probe; exact firmware, viewport, version, digest, origin class recorded | PENDING | - | Installs and runs from GitHub Pages trusted origin (owner-observed 2026-07-19); capture export/screenshot for evidence ID and record firmware/version/digest |
 | H02 | Cache-busted upgrade | New immutable version loads after reinstall; old version remains immutable | PENDING | - | |
-| H03 | Portrait canvas | Exact 240x282 CSS viewport, no document/app overflow, full return path | PENDING | - | Measured 240x292 (owner-observed 2026-07-19) — 10px taller than the assumed 240x282; retarget the fixed viewport and confirm no overflow |
+| H03 | Portrait canvas | Exact 240x292 CSS viewport, no document/app overflow, full return path | PENDING | - | Owner-observed viewport 240x292; retargeted the fixed canvas 282->292 across app/tests/screenshots. Reinstall (?v=7) and confirm no overflow and full return path on device |
 | H04 | Landscape gate | No product data/action appears; portrait resumes prior state/focus | PENDING | - | |
 | H05 | Wheel mapping | Physical direction, event names, rate, rapid ticks, boundaries, feedback latency measured | PENDING | - | |
 | H06 | Side short click | One deliberate click produces exactly one semantic activation | PENDING | - | |

@@ -18,7 +18,7 @@ function setup({ voice = true } = {}) {
   document.visibilityState = "visible";
   host.document = document;
   host.innerWidth = 240;
-  host.innerHeight = 282;
+  host.innerHeight = 292;
   host.location = { protocol: "https:" };
   host.creationStorage = { secure: {} };
   const voiceMessages = [];

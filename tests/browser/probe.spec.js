@@ -16,11 +16,11 @@ async function expectFixedViewport(page) {
   }));
   expect(dimensions).toEqual({
     innerWidth: 240,
-    innerHeight: 282,
+    innerHeight: 292,
     bodyWidth: 240,
-    bodyHeight: 282,
+    bodyHeight: 292,
     appWidth: 240,
-    appHeight: 282,
+    appHeight: 292,
     nodes: expect.any(Number),
   });
   expect(dimensions.nodes).toBeLessThanOrEqual(budgets.dom.transientNodes);

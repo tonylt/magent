@@ -12,7 +12,7 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:4173",
     browserName: "chromium",
-    viewport: { width: 240, height: 282 },
+    viewport: { width: 240, height: 292 },
     colorScheme: "dark",
     reducedMotion: "reduce",
     deviceScaleFactor: 1,

@@ -297,7 +297,7 @@ function renderHome() {
 function renderDiagnostics() {
   const capabilities = bridge.capabilities();
   const rows = [
-    ["VIEWPORT", capabilities.viewport, capabilities.viewport === "240x282"],
+    ["VIEWPORT", capabilities.viewport, capabilities.viewport === "240x292"],
     ["HTTPS", capabilities.protocol.toUpperCase(), capabilities.protocol === "https"],
     ["VOICE BRIDGE", capabilities.voice ? "FOUND" : "MOCK", capabilities.voice],
     ["SECURE STORE", capabilities.secureStorage ? "FOUND" : "ABSENT", capabilities.secureStorage],

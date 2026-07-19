@@ -16,7 +16,7 @@ function createRabbitDom() {
   const messages: string[] = [];
   const host = new EventTarget() as RabbitTestHost;
   host.innerWidth = 240;
-  host.innerHeight = 282;
+  host.innerHeight = 292;
   host.location = { protocol: "https:" };
   host.CreationVoiceHandler = { postMessage: (message) => messages.push(message) };
   const document = new EventTarget() as EventTarget & { visibilityState: string };

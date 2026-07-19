@@ -11,7 +11,7 @@
 html,
 body {
   width: 240px;
-  height: 282px;
+  height: 292px;
   margin: 0;
   overflow: hidden;
   background: #090a0a;
@@ -22,7 +22,7 @@ button { font: inherit; }
 #app {
   position: relative;
   width: 240px;
-  height: 282px;
+  height: 292px;
   padding-top: 3px;
   overflow: hidden;
   background: #090a0a;

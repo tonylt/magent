@@ -26,7 +26,7 @@ test("disposing during a capability probe prevents a late ready render", async (
   resolveProbe({
     platform: "browser",
     lifecycle: "foreground",
-    viewport: { width: 240, height: 282, orientation: "portrait" },
+    viewport: { width: 240, height: 292, orientation: "portrait" },
     firmware: { status: "tested" },
     features: {
       semanticInput: "available", voice: "available", secureStorage: "available",

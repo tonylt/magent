@@ -17,7 +17,7 @@ function supportedSnapshot(): CapabilitySnapshot {
   return {
     platform: "browser",
     lifecycle: "foreground",
-    viewport: { width: 240, height: 282, orientation: "portrait" },
+    viewport: { width: 240, height: 292, orientation: "portrait" },
     firmware: { id: "fixture", status: "tested" },
     features: {
       semanticInput: "available",
