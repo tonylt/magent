@@ -203,7 +203,9 @@ export async function connectDaemonRepository(
 
   try {
     await client.connect();
+    console.log("[paseo] connected");
   } catch (error) {
+    console.log(`[paseo] connect error: ${redactSecrets(error instanceof Error ? error.message : String(error))}`);
     try {
       void client.close();
     } catch {
@@ -213,11 +215,17 @@ export async function connectDaemonRepository(
   }
 
   async function agents(): Promise<AgentSnapshotPayload[]> {
-    const payload = await client.fetchAgents({
-      page: { limit: 200 },
-      sort: [{ key: "updated_at", direction: "desc" }],
-    });
-    return payload.entries.map((entry) => entry.agent);
+    try {
+      const payload = await client.fetchAgents({
+        page: { limit: 200 },
+        sort: [{ key: "updated_at", direction: "desc" }],
+      });
+      console.log(`[paseo] fetchAgents ok entries=${payload.entries.length}`);
+      return payload.entries.map((entry) => entry.agent);
+    } catch (error) {
+      console.log(`[paseo] fetchAgents error: ${redactSecrets(error instanceof Error ? error.message : String(error))}`);
+      return [];
+    }
   }
 
   const repository: PaseoRepository = {
