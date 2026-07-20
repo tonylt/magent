@@ -1,16 +1,22 @@
 # Rabbit R1 Paseo Companion Execution State
 
-Last updated: 2026-07-18
+Last updated: 2026-07-20
 
 ## Current Position
 
-- Milestone: M001 - Rabbit R1 Paseo Companion Daily-Use Release
-- Active slices: S02 - Firmware-bound owned-R1 capability matrix (awaiting hardware); S05 - Real-R1 private Relay E2EE bootstrap (blocked on S02); S12 - Immutable audited Creation release path (AFK parts, `depends:[S03]`)
-- Status: S01/S03/S04/S11 complete; S02 awaiting owned-R1 hardware; S05 blocked on S02
-- Completed slices: 4 / 21
-- Roadmap: `.gsd/milestones/M001/M001-ROADMAP.md`
+- **Active milestone: M002 — Mobile Paseo Companion (UX-differentiated MVP)**, Expo/React Native/TypeScript under `mobile/`. Thesis: away-from-desk triage/intervention with attention-first UX. Backend daemon available; UX-first with mock data, then wired. See `.gsd/milestones/M002/M002-PRD.md`.
+- **M001 (Rabbit R1) is PAUSED** due to device friction (no on-device console, side-button long-press likely OS-reserved, viewport/cert/cache friction). Reusable assets carry over: `CONTEXT.md` domain model, `DESIGN.md`, safety principles, and the S04 Relay contract.
+- M001 completed slices before pause: S01, S03, S04, S11 (+ S12 release path, S02 in progress).
 
-## Recent Progress
+## M002 Progress
+
+- Scaffolded Expo SDK 57 + React Native 0.86 + React 19 + TypeScript under `mobile/` (blank-typescript) with React Navigation native-stack.
+- M2-S01: dark mobile theme tokens; pure domain types + selectors (attention ranking permission>error>finished then recency, freshness/actionability, target-bound Draft, timeAgo) with 6 Node unit tests; `PaseoRepository` interface + deterministic mock data + shared instance.
+- Flagship + loop screens (mock): Attention Home (ranked cards, host/freshness header, pull-to-refresh, empty state), Workspaces/Agent list, Agent timeline (freshness-gated Follow-up), Follow-up Composer (hold-to-dictate mock, review-before-send, never auto-sends, Draft bound to Agent), Permission read-only handoff.
+- Verified: `npm test` (6 pass) and `npm run typecheck` (clean) in `mobile/`. Runtime preview via `expo start` (Expo Go / web) — not run in this environment.
+- Next: M2-S05 wire `PaseoRepository` to the daemon over the Relay contract; design-review polish (M2-S06).
+
+## M001 Recent Progress (paused)
 
 - `66e0e47` established the approved product, architecture, UI/UX, ADR, prototype, design-review evidence, and M001 roadmap baseline.
 - `f31ee84` defined the S01 deterministic unit and browser contracts.
