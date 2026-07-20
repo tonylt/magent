@@ -81,6 +81,17 @@ These follow once the read + Follow-up loop is proven.
   reconciliation on reconnect.
 - **M2-S06**: Design-review pass vs current Paseo mobile; polish, a11y, one-hand.
 
+## Voice dictation
+
+- **Now (route A, shipped):** the Composer is a real multiline `TextInput`; on iOS the
+  keyboard microphone provides native dictation (SFSpeechRecognizer) with no extra
+  native module, so it works in Expo Go. Review-before-send, Draft bound to the Agent,
+  and never-auto-send are preserved.
+- **Long-term (route B):** a dedicated hold-to-talk recognizer via
+  `expo-speech-recognition` (Apple Speech framework + Android SpeechRecognizer) with
+  live partial transcripts. Requires a development build (not Expo Go) plus microphone
+  and speech-recognition permissions. Tracked for when M002 moves to a dev/EAS build.
+
 ## Verification
 
 - Pure domain/selectors: `node --test` (attention ranking, freshness, target-bound

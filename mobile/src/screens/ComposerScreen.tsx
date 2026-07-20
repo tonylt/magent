@@ -1,83 +1,77 @@
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { Draft } from "../domain/types";
 import { draftMatchesTarget } from "../domain/selectors";
 import { getRepository } from "../data/instance";
 import { redactSecrets } from "../data/paseo/daemon";
 import { colors, font, radius, space, touchTarget } from "../theme";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ScreenProps } from "../navigation";
 
-// Mock dictation phrases appended on each hold-release, standing in for native STT
-// until M2-S05 wires real speech-to-text.
-const MOCK_PHRASES = [
-  "Approve the write and continue.",
-  "Add a test for the refresh race first.",
-  "Explain why the turn failed before retrying.",
-];
-
+// Route A: a real multiline input. On iOS the keyboard's microphone key provides
+// native dictation (SFSpeechRecognizer under the hood) with no extra native module,
+// so this works in Expo Go. A dedicated hold-to-talk recognizer (route B) needs a
+// development build and is tracked as a long-term plan in the PRD.
 export function ComposerScreen({ route, navigation }: ScreenProps<"Composer">) {
   const { agentId } = route.params;
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<Draft>({ agentId, text: "" });
-  const [recording, setRecording] = useState(false);
-  const [dictations, setDictations] = useState(0);
+  const [sending, setSending] = useState(false);
 
-  function appendDictation() {
-    const phrase = MOCK_PHRASES[dictations % MOCK_PHRASES.length];
-    setDictations((n) => n + 1);
-    setDraft((current) => ({
-      agentId,
-      text: current.text ? `${current.text} ${phrase}` : phrase,
-    }));
-  }
+  const canSend = draftMatchesTarget(draft, agentId) && draft.text.trim().length > 0 && !sending;
 
-  const canSend = draftMatchesTarget(draft, agentId) && draft.text.trim().length > 0;
-
-  function send() {
-    // Never auto-sends; explicit confirmation, then send via the repository (real
-    // daemon send, or no-op in demo), clear, and return.
-    Alert.alert("Send Follow-up?", draft.text, [
+  function confirmSend() {
+    // Never auto-sends — explicit review + confirmation.
+    Alert.alert("Send Follow-up?", draft.text.trim(), [
       { text: "Cancel", style: "cancel" },
-      {
-        text: "Send",
-        onPress: () => {
-          void (async () => {
-            try {
-              await getRepository().sendFollowup(agentId, draft.text);
-              navigation.goBack();
-            } catch (e) {
-              Alert.alert("Send failed", redactSecrets(e instanceof Error ? e.message : String(e)));
-            }
-          })();
-        },
-      },
+      { text: "Send", onPress: () => void doSend() },
     ]);
   }
 
-  return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.eyebrow}>FOLLOW-UP · REVIEW BEFORE SEND</Text>
-        <View style={styles.draftBox}>
-          <Text style={draft.text ? styles.draftText : styles.placeholder}>
-            {draft.text || "Hold the button to dictate. Nothing sends automatically."}
-          </Text>
-        </View>
-      </ScrollView>
+  async function doSend() {
+    setSending(true);
+    try {
+      await getRepository().sendFollowup(agentId, draft.text.trim());
+      navigation.goBack();
+    } catch (e) {
+      setSending(false);
+      Alert.alert("Send failed", redactSecrets(e instanceof Error ? e.message : String(e)));
+    }
+  }
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>
-        <Pressable
-          onPressIn={() => setRecording(true)}
-          onPressOut={() => {
-            setRecording(false);
-            appendDictation();
-          }}
-          style={({ pressed }) => [styles.dictate, (recording || pressed) && styles.dictateActive]}
-        >
-          <Text style={styles.dictateText}>{recording ? "LISTENING… RELEASE TO ADD" : "HOLD TO DICTATE"}</Text>
-        </Pressable>
+  return (
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <View style={styles.content}>
+        <Text style={styles.eyebrow}>FOLLOW-UP · REVIEW BEFORE SEND</Text>
+        <Text style={styles.hint}>Type, or tap the microphone on the keyboard to dictate. Nothing sends automatically.</Text>
+        <TextInput
+          style={styles.input}
+          value={draft.text}
+          onChangeText={(text) => setDraft({ agentId, text })}
+          placeholder="Write a follow-up…"
+          placeholderTextColor={colors.textFaint}
+          multiline
+          autoFocus
+          textAlignVertical="top"
+          keyboardAppearance="dark"
+          editable={!sending}
+        />
+      </View>
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
         <View style={styles.actions}>
           <Pressable style={styles.cancel} onPress={() => navigation.goBack()}>
             <Text style={styles.cancelText}>CANCEL</Text>
@@ -85,41 +79,33 @@ export function ComposerScreen({ route, navigation }: ScreenProps<"Composer">) {
           <Pressable
             disabled={!canSend}
             style={[styles.send, !canSend && styles.sendDisabled]}
-            onPress={send}
+            onPress={confirmSend}
           >
-            <Text style={[styles.sendText, !canSend && styles.sendTextDisabled]}>SEND</Text>
+            <Text style={[styles.sendText, !canSend && styles.sendTextDisabled]}>{sending ? "SENDING…" : "SEND"}</Text>
           </Pressable>
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.lg, gap: space.md },
+  content: { flex: 1, padding: space.lg, gap: space.sm },
   eyebrow: { color: colors.textFaint, fontSize: font.size.xs, letterSpacing: 2, fontWeight: font.weight.bold },
-  draftBox: {
-    minHeight: 160,
+  hint: { color: colors.textDim, fontSize: font.size.sm, lineHeight: 20 },
+  input: {
+    flex: 1,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     padding: space.lg,
+    color: colors.text,
+    fontSize: font.size.lg,
+    lineHeight: 26,
   },
-  draftText: { color: colors.text, fontSize: font.size.lg, lineHeight: 26 },
-  placeholder: { color: colors.textFaint, fontSize: font.size.md, lineHeight: 24 },
   footer: { padding: space.lg, gap: space.md, borderTopWidth: 1, borderTopColor: colors.border },
-  dictate: {
-    minHeight: touchTarget,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dictateActive: { backgroundColor: colors.accent },
-  dictateText: { color: colors.text, fontSize: font.size.md, fontWeight: font.weight.bold, letterSpacing: 1 },
   actions: { flexDirection: "row", gap: space.md },
   cancel: {
     flex: 1,
@@ -132,7 +118,7 @@ const styles = StyleSheet.create({
   },
   cancelText: { color: colors.textDim, fontSize: font.size.md, fontWeight: font.weight.bold, letterSpacing: 1 },
   send: {
-    flex: 1,
+    flex: 2,
     minHeight: touchTarget,
     borderRadius: radius.md,
     backgroundColor: colors.accent,
