@@ -53,7 +53,16 @@ export interface Attention {
   readonly freshness: Freshness;
 }
 
-export type TimelineKind = "message" | "tool" | "error" | "finished" | "permission";
+export type TimelineKind =
+  | "user"
+  | "assistant"
+  | "reasoning"
+  | "tool"
+  | "todo"
+  | "message"
+  | "error"
+  | "finished"
+  | "permission";
 
 export interface TimelineEvent {
   readonly id: string;

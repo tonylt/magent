@@ -133,8 +133,15 @@ function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): Timel
     let text = "";
     switch (item.type) {
       case "user_message":
+        kind = "user";
+        text = item.text;
+        break;
       case "assistant_message":
+        kind = "assistant";
+        text = item.text;
+        break;
       case "reasoning":
+        kind = "reasoning";
         text = item.text;
         break;
       case "tool_call":
@@ -142,7 +149,7 @@ function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): Timel
         text = item.status && item.status !== "completed" ? `${item.name} · ${item.status}` : item.name;
         break;
       case "todo":
-        kind = "tool";
+        kind = "todo";
         text = item.items.map((t) => `${t.completed ? "✓" : "○"} ${t.text}`).join("\n");
         break;
       case "error":
@@ -150,6 +157,7 @@ function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): Timel
         text = item.message;
         break;
       case "compaction":
+        kind = "reasoning";
         text = "Compacted earlier context";
         break;
       default:

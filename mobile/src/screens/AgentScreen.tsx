@@ -10,11 +10,27 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ScreenProps } from "../navigation";
 
 const kindColor: Record<TimelineEvent["kind"], string> = {
-  message: colors.text,
+  user: colors.accent,
+  assistant: colors.text,
+  reasoning: colors.textFaint,
   tool: colors.textDim,
+  todo: colors.finished,
+  message: colors.text,
   error: colors.error,
   finished: colors.finished,
   permission: colors.permission,
+};
+
+const kindLabel: Record<TimelineEvent["kind"], string> = {
+  user: "YOU",
+  assistant: "AGENT",
+  reasoning: "THINKING",
+  tool: "TOOL",
+  todo: "TODO",
+  message: "MESSAGE",
+  error: "ERROR",
+  finished: "FINISHED",
+  permission: "PERMISSION",
 };
 
 export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
@@ -65,12 +81,23 @@ export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
 
         <View style={styles.timeline}>
           {events.map((event) => (
-            <View key={event.id} style={styles.event}>
-              <Text style={[styles.kind, { color: kindColor[event.kind] }]}>{event.kind.toUpperCase()}</Text>
-              <Text style={styles.eventText}>
-                {event.text}{event.truncated ? " …" : ""}
-              </Text>
-              <Text style={styles.eventTime}>{timeAgo(event.at, now)}</Text>
+            <View
+              key={event.id}
+              style={[
+                styles.event,
+                { borderLeftColor: kindColor[event.kind] },
+                event.kind === "user" && styles.eventUser,
+              ]}
+            >
+              <View style={styles.eventHead}>
+                <Text style={[styles.kind, { color: kindColor[event.kind] }]}>{kindLabel[event.kind]}</Text>
+                <Text style={styles.eventTime}>{timeAgo(event.at, now)}</Text>
+              </View>
+              {event.text ? (
+                <Text style={[styles.eventText, event.kind === "reasoning" && styles.reasoningText]}>
+                  {event.text}{event.truncated ? " …" : ""}
+                </Text>
+              ) : null}
             </View>
           ))}
         </View>
@@ -98,17 +125,22 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   meta: { color: colors.textDim, fontSize: font.size.sm },
   readonly: { color: colors.textFaint, fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1 },
-  timeline: { marginTop: space.md, gap: space.md },
+  timeline: { marginTop: space.md, gap: space.sm },
   event: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: space.md,
+    borderLeftWidth: 3,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
     gap: space.xs,
   },
-  kind: { fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1 },
-  eventText: { color: colors.text, fontSize: font.size.md },
+  eventUser: { backgroundColor: colors.surfaceRaised },
+  eventHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  kind: { fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1.5 },
+  eventText: { color: colors.text, fontSize: font.size.md, lineHeight: 22 },
+  reasoningText: { color: colors.textDim, fontStyle: "italic" },
   eventTime: { color: colors.textFaint, fontSize: font.size.xs },
   footer: { padding: space.lg, borderTopWidth: 1, borderTopColor: colors.border },
   action: {
