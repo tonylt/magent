@@ -88,3 +88,31 @@ These follow once the read + Follow-up loop is proven.
 - Types: `tsc --noEmit`.
 - Runtime preview: `expo start` (Expo Go on device) and `expo start --web`.
 - Design review of each screen against the thesis before wiring the daemon.
+
+## M2-S05 Integration Findings (official Paseo, github.com/getpaseo/paseo)
+
+Reuse the official SDK instead of re-implementing the protocol; our value is UX.
+
+- **Pairing**: the pair URL is `https://app.paseo.sh/#offer=<base64url>`. Decode with
+  `parseConnectionOfferFromUrl()` (`@getpaseo/protocol`) → `ConnectionOfferV2`:
+  `{ v:2, serverId, daemonPublicKeyB64, relay:{ endpoint, useTls? } }`.
+- **Connect (relay, E2EE)**: `new DaemonClient({ url: buildRelayWebSocketUrl({ endpoint,
+  useTls, serverId }), e2ee:{ enabled:true, daemonPublicKeyB64 }, clientId,
+  clientType:"mobile", appVersion })` then `await client.connect()`.
+- **Read**: low-level client `@getpaseo/client/internal/daemon-client` exposes
+  `fetchWorkspaces()`, `fetchAgents()`, `fetchAgentTimeline(agentId)`. Each agent
+  snapshot carries `requiresAttention?`, `attentionReason?: finished|error|permission`,
+  `attentionTimestamp?`. Attention Home = agents with `requiresAttention`, ranked by
+  our existing selector. The high-level facade `createPaseoClient()` is handle/
+  subscription-oriented (workspaces.list, agent/timeline handles) — good for live
+  updates later.
+- **Follow-up**: agent handle `.send(text)` (facade) / send RPC (low-level).
+- **Versions**: installable npm `@getpaseo/client@0.1.110` (latest); repo source is the
+  unreleased `0.2.0-beta.1`. Match the client to the running daemon version.
+- **RN runtime**: relay E2EE needs a crypto/random polyfill and the global WebSocket
+  (RN provides WebSocket; add `react-native-get-random-values` etc. mirroring
+  `packages/app`). Final connect must be verified on-device against the daemon.
+
+Plan: replace the provisional `src/data/paseo/{transport,pairUrl,client}.ts` seam with
+a `DaemonClient`-backed `PaseoRepository`, add a Connect screen (paste/scan the offer
+URL) + repository provider, and the crypto polyfill.

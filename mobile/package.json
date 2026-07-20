@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@getpaseo/client": "^0.1.110",
+    "@getpaseo/protocol": "^0.1.110",
     "@react-navigation/native": "^7.3.11",
     "@react-navigation/native-stack": "^7.18.3",
     "expo": "~57.0.7",
