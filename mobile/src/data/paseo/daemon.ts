@@ -3,6 +3,10 @@
 // Attention is derived from agents whose snapshot has requiresAttention.
 
 import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type {
+  ConnectionState,
+  FetchAgentTimelinePayload,
+} from "@getpaseo/client/internal/daemon-client";
 import { parseConnectionOfferFromUrl } from "@getpaseo/protocol/connection-offer";
 import { buildRelayWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
 import type {
@@ -111,29 +115,47 @@ function mapAttention(agent: AgentSnapshotPayload): Attention {
   };
 }
 
-function mapTimeline(agentId: string, payload: unknown): TimelineEvent[] {
-  // The daemon timeline is a rich union; extract a text + kind defensively for the MVP.
-  const items = (payload as { items?: unknown[]; entries?: unknown[] })?.items
-    ?? (payload as { entries?: unknown[] })?.entries
-    ?? [];
-  const kinds: TimelineKind[] = ["message", "tool", "error", "finished", "permission"];
-  return (items as Record<string, unknown>[]).map((raw, index) => {
-    const kindRaw = String(raw.kind ?? raw.type ?? "message");
-    const kind: TimelineKind = kinds.includes(kindRaw as TimelineKind)
-      ? (kindRaw as TimelineKind)
-      : kindRaw.includes("error")
-        ? "error"
-        : kindRaw.includes("tool")
-          ? "tool"
-          : "message";
-    const text = String(raw.text ?? raw.summary ?? raw.message ?? "");
-    return {
-      id: String(raw.id ?? `${agentId}-${index}`),
-      agentId,
-      at: toMs((raw.at ?? raw.createdAt ?? raw.timestamp) as string | undefined),
-      kind,
-      text,
-    };
+function mapFreshness(state: ConnectionState): "live" | "syncing" | "stale" {
+  switch (state.status) {
+    case "connected":
+      return "live";
+    case "connecting":
+      return "syncing";
+    default:
+      return "stale";
+  }
+}
+
+function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): TimelineEvent[] {
+  return payload.entries.map((entry, index) => {
+    const item = entry.item;
+    let kind: TimelineKind = "message";
+    let text = "";
+    switch (item.type) {
+      case "user_message":
+      case "assistant_message":
+      case "reasoning":
+        text = item.text;
+        break;
+      case "tool_call":
+        kind = item.status === "failed" ? "error" : "tool";
+        text = item.status && item.status !== "completed" ? `${item.name} · ${item.status}` : item.name;
+        break;
+      case "todo":
+        kind = "tool";
+        text = item.items.map((t) => `${t.completed ? "✓" : "○"} ${t.text}`).join("\n");
+        break;
+      case "error":
+        kind = "error";
+        text = item.message;
+        break;
+      case "compaction":
+        text = "Compacted earlier context";
+        break;
+      default:
+        break;
+    }
+    return { id: `${agentId}-${entry.seqStart}-${index}`, agentId, at: toMs(entry.timestamp), kind, text };
   });
 }
 
@@ -172,7 +194,12 @@ function connectErrorMessage(error: unknown): string {
 
 export async function connectDaemonRepository(
   pairUrl: string,
-  options: { clientId: string; appVersion?: string; connectTimeoutMs?: number } = { clientId: "paseo-mobile" },
+  options: {
+    clientId: string;
+    appVersion?: string;
+    connectTimeoutMs?: number;
+    onStatusChange?: () => void;
+  } = { clientId: "paseo-mobile" },
 ): Promise<DaemonConnection> {
   let offer;
   try {
@@ -231,10 +258,12 @@ export async function connectDaemonRepository(
     return value;
   }
 
+  const unsubscribeStatus = client.subscribeConnectionStatus(() => options.onStatusChange?.());
+
   const repository: PaseoRepository = {
     getHostSnapshot: async (): Promise<HostSnapshot> => ({
       hostName: offer.serverId,
-      freshness: "live",
+      freshness: mapFreshness(client.getConnectionState()),
       auth: "active",
       lastSyncedAt: Date.now(),
     }),
@@ -259,7 +288,8 @@ export async function connectDaemonRepository(
       return found ? mapAgent(found) : null;
     },
     listSubagents: async () => [],
-    getTimeline: async (agentId) => mapTimeline(agentId, await client.fetchAgentTimeline(agentId)),
+    getTimeline: async (agentId) =>
+      mapTimeline(agentId, await client.fetchAgentTimeline(agentId, { limit: 100, direction: "tail" })),
     getPermission: async (permissionId) => {
       const agent = (await agents()).find((a) => a.id === permissionId || a.pendingPermissions?.some((p) => p.id === permissionId));
       if (!agent) return null;
@@ -273,7 +303,18 @@ export async function connectDaemonRepository(
       };
       return request;
     },
+    sendFollowup: async (agentId, text) => {
+      await client.sendAgentMessage(agentId, text);
+      agentsCache = null;
+    },
   };
 
-  return { repository, hostName: offer.serverId, close: () => void client.close() };
+  return {
+    repository,
+    hostName: offer.serverId,
+    close: () => {
+      unsubscribeStatus();
+      void client.close();
+    },
+  };
 }

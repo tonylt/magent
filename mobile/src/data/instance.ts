@@ -55,7 +55,11 @@ export async function connectWithOffer(pairUrl: string): Promise<void> {
   try {
     daemonClose?.();
     daemonClose = null;
-    const conn = await connectDaemonRepository(pairUrl, { clientId: clientId(), appVersion: "m002-mvp" });
+    const conn = await connectDaemonRepository(pairUrl, {
+      clientId: clientId(),
+      appVersion: "m002-mvp",
+      onStatusChange: () => notify(),
+    });
     repository = conn.repository;
     daemonClose = conn.close;
     connection = { mode: "online", hostName: conn.hostName };

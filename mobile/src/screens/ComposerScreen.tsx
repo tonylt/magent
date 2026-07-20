@@ -3,6 +3,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 
 import type { Draft } from "../domain/types";
 import { draftMatchesTarget } from "../domain/selectors";
+import { getRepository } from "../data/instance";
+import { redactSecrets } from "../data/paseo/daemon";
 import { colors, font, radius, space, touchTarget } from "../theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ScreenProps } from "../navigation";
@@ -34,13 +36,22 @@ export function ComposerScreen({ route, navigation }: ScreenProps<"Composer">) {
   const canSend = draftMatchesTarget(draft, agentId) && draft.text.trim().length > 0;
 
   function send() {
-    // Never auto-sends; explicit confirmation, then clear and return. No real submit
-    // until the daemon is wired (M2-S05).
+    // Never auto-sends; explicit confirmation, then send via the repository (real
+    // daemon send, or no-op in demo), clear, and return.
     Alert.alert("Send Follow-up?", draft.text, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Send",
-        onPress: () => navigation.goBack(),
+        onPress: () => {
+          void (async () => {
+            try {
+              await getRepository().sendFollowup(agentId, draft.text);
+              navigation.goBack();
+            } catch (e) {
+              Alert.alert("Send failed", redactSecrets(e instanceof Error ? e.message : String(e)));
+            }
+          })();
+        },
       },
     ]);
   }

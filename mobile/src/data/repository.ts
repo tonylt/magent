@@ -20,6 +20,8 @@ export interface PaseoRepository {
   listSubagents(parentAgentId: string): Promise<AgentSession[]>;
   getTimeline(agentId: string): Promise<TimelineEvent[]>;
   getPermission(permissionId: string): Promise<PermissionRequest | null>;
+  /** Send a reviewed Follow-up to an Agent. No-op in the mock repository. */
+  sendFollowup(agentId: string, text: string): Promise<void>;
 }
 
 /** Simulated latency so freshness/loading states are exercised realistically. */
@@ -40,5 +42,8 @@ export function createMockRepository(): PaseoRepository {
     getTimeline: (agentId) => delay(mock.timelines[agentId] ?? []),
     getPermission: (permissionId) =>
       delay(mock.permissions.find((p) => p.id === permissionId) ?? null),
+    sendFollowup: async () => {
+      // Demo mode never sends.
+    },
   };
 }
