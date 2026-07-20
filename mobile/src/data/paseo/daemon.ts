@@ -118,12 +118,45 @@ export interface DaemonConnection {
   close(): void;
 }
 
+// Strip anything credential-like from a message before it can reach the UI or logs:
+// URLs, #offer fragments, and long base64/token-looking strings (keys, secrets).
+export function redactSecrets(message: string): string {
+  return String(message)
+    .replace(/#offer=\S+/gi, "#offer=<redacted>")
+    .replace(/(wss?|https?):\/\/\S+/gi, "<url>")
+    .replace(/[A-Za-z0-9+/_-]{40,}={0,2}/g, "<token>");
+}
+
+// The SDK may otherwise log connection URLs/frames; keep it silent so the offer and
+// derived connection details never hit the console/Metro logs.
+const noopLogger = {
+  debug: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+};
+
+function connectErrorMessage(error: unknown): string {
+  const raw = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  if (raw.includes("timeout") || raw.includes("timed out")) return "Connection timed out — check the host is reachable.";
+  if (raw.includes("refused") || raw.includes("econnrefused")) return "Connection refused by the relay.";
+  if (raw.includes("closed")) return "The relay closed the connection.";
+  if (raw.includes("unauthor") || raw.includes("forbidden")) return "The host rejected this device.";
+  return "Could not connect to the Paseo host.";
+}
+
 export async function connectDaemonRepository(
   pairUrl: string,
   options: { clientId: string; appVersion?: string; connectTimeoutMs?: number } = { clientId: "paseo-mobile" },
 ): Promise<DaemonConnection> {
-  const offer = parseConnectionOfferFromUrl(pairUrl);
-  if (!offer) throw new Error("Not a Paseo pairing offer URL (missing #offer=)");
+  let offer;
+  try {
+    offer = parseConnectionOfferFromUrl(pairUrl);
+  } catch {
+    // Never surface the raw parse error — it can echo offer field values.
+    throw new Error("Invalid pairing offer.");
+  }
+  if (!offer) throw new Error("Not a Paseo pairing offer URL (needs an #offer= link).");
 
   const url = buildRelayWebSocketUrl({
     endpoint: offer.relay.endpoint,
@@ -138,11 +171,21 @@ export async function connectDaemonRepository(
     clientType: "mobile",
     appVersion: options.appVersion,
     suppressSendErrors: true,
+    logger: noopLogger,
     e2ee: { enabled: true, daemonPublicKeyB64: offer.daemonPublicKeyB64 },
     ...(options.connectTimeoutMs ? { connectTimeoutMs: options.connectTimeoutMs } : {}),
   });
 
-  await client.connect();
+  try {
+    await client.connect();
+  } catch (error) {
+    try {
+      void client.close();
+    } catch {
+      // ignore
+    }
+    throw new Error(connectErrorMessage(error));
+  }
 
   async function agents(): Promise<AgentSnapshotPayload[]> {
     const payload = await client.fetchAgents();

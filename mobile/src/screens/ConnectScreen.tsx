@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { connectWithOffer, useMockData } from "../data/instance";
+import { redactSecrets } from "../data/paseo/daemon";
 import { colors, font, radius, space, touchTarget } from "../theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ScreenProps } from "../navigation";
@@ -19,7 +20,7 @@ export function ConnectScreen({ navigation }: ScreenProps<"Connect">) {
       await connectWithOffer(url.trim());
       navigation.navigate("Home");
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(redactSecrets(e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy(false);
     }

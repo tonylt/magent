@@ -1,5 +1,5 @@
 import { createMockRepository, type PaseoRepository } from "./repository";
-import { connectDaemonRepository } from "./paseo/daemon";
+import { connectDaemonRepository, redactSecrets } from "./paseo/daemon";
 
 // Lightweight module store: holds the active repository (mock or daemon) plus the
 // connection state, and notifies subscribers. Screens read getRepository() at load
@@ -55,9 +55,10 @@ export async function connectWithOffer(pairUrl: string): Promise<void> {
     connection = { mode: "online", hostName: conn.hostName };
     notify();
   } catch (error) {
-    connection = { mode: "error", message: error instanceof Error ? error.message : String(error) };
+    const message = redactSecrets(error instanceof Error ? error.message : String(error));
+    connection = { mode: "error", message };
     notify();
-    throw error;
+    throw new Error(message);
   }
 }
 
