@@ -213,7 +213,10 @@ export async function connectDaemonRepository(
   }
 
   async function agents(): Promise<AgentSnapshotPayload[]> {
-    const payload = await client.fetchAgents();
+    const payload = await client.fetchAgents({
+      page: { limit: 200 },
+      sort: [{ key: "updated_at", direction: "desc" }],
+    });
     return payload.entries.map((entry) => entry.agent);
   }
 
@@ -227,7 +230,7 @@ export async function connectDaemonRepository(
     listAttention: async () => (await agents()).filter((a) => a.requiresAttention).map(mapAttention),
     listWorkspaces: async () => {
       const [workspacesPayload, agentList] = await Promise.all([
-        client.fetchWorkspaces().catch(() => null),
+        client.fetchWorkspaces({ page: { limit: 200 } }).catch(() => null),
         agents(),
       ]);
       const daemonWorkspaces = workspacesPayload?.entries ?? [];
