@@ -35,8 +35,6 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
   const [connection, setConnection] = useState<Connection>(() => getConnection());
   const insets = useSafeAreaInsets();
 
-  useEffect(() => subscribeConnection(() => setConnection(getConnection())), []);
-
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -58,6 +56,11 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
   }, []);
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
+
+  useEffect(() => subscribeConnection(() => {
+    setConnection(getConnection());
+    void load();
+  }), [load]);
 
   const ranked = rankAttention(attention);
 

@@ -1,5 +1,11 @@
+import * as SecureStore from "expo-secure-store";
+
 import { createMockRepository, type PaseoRepository } from "./repository";
 import { connectDaemonRepository, redactSecrets } from "./paseo/daemon";
+
+// The pairing offer is sensitive: store it only in the OS-encrypted keystore
+// (Keychain/Keystore), never plain storage or logs.
+const OFFER_KEY = "paseo.offer";
 
 // Lightweight module store: holds the active repository (mock or daemon) plus the
 // connection state, and notifies subscribers. Screens read getRepository() at load
@@ -54,11 +60,26 @@ export async function connectWithOffer(pairUrl: string): Promise<void> {
     daemonClose = conn.close;
     connection = { mode: "online", hostName: conn.hostName };
     notify();
+    // Persist the offer (encrypted) so we can auto-reconnect on next launch.
+    void SecureStore.setItemAsync(OFFER_KEY, pairUrl).catch(() => {});
   } catch (error) {
     const message = redactSecrets(error instanceof Error ? error.message : String(error));
     connection = { mode: "error", message };
     notify();
     throw new Error(message);
+  }
+}
+
+let restored = false;
+/** On launch, reconnect from the stored offer (if any). Safe to call repeatedly. */
+export async function restoreConnection(): Promise<void> {
+  if (restored) return;
+  restored = true;
+  try {
+    const saved = await SecureStore.getItemAsync(OFFER_KEY);
+    if (saved) await connectWithOffer(saved);
+  } catch {
+    // connectWithOffer already recorded an error state; stay recoverable.
   }
 }
 
@@ -68,4 +89,5 @@ export function useMockData(): void {
   repository = createMockRepository();
   connection = { mode: "mock" };
   notify();
+  void SecureStore.deleteItemAsync(OFFER_KEY).catch(() => {});
 }

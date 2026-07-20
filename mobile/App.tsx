@@ -1,7 +1,10 @@
 import { DarkTheme, NavigationContainer, type Theme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { restoreConnection } from "./src/data/instance";
 
 import { AgentScreen } from "./src/screens/AgentScreen";
 import { AttentionHomeScreen } from "./src/screens/AttentionHomeScreen";
@@ -27,6 +30,10 @@ const theme: Theme = {
 };
 
 export default function App() {
+  useEffect(() => {
+    void restoreConnection();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
