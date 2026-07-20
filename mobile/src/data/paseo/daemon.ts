@@ -126,18 +126,7 @@ function mapFreshness(state: ConnectionState): "live" | "syncing" | "stale" {
   }
 }
 
-let loggedTimelineShape = false;
 function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): TimelineEvent[] {
-  if (!loggedTimelineShape && payload.entries.length > 0) {
-    loggedTimelineShape = true;
-    // Type + text length only (no content) to diagnose empty rows.
-    const shape = payload.entries.slice(0, 3).map((e) => {
-      const it = e.item as { type?: string; text?: unknown; message?: unknown };
-      const len = typeof it.text === "string" ? it.text.length : typeof it.message === "string" ? it.message.length : -1;
-      return `${it.type}:${len}`;
-    });
-    console.log(`[paseo] timeline shape ${JSON.stringify(shape)} projection=${payload.projection}`);
-  }
   return payload.entries.map((entry, index) => {
     const item = entry.item;
     let kind: TimelineKind = "message";
