@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { FreshnessBadge } from "../components/FreshnessBadge";
 import { getRepository } from "../data/instance";
@@ -24,21 +24,38 @@ export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [host, setHost] = useState<HostSnapshot | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const repository = getRepository();
+      const [nextAgent, nextEvents, nextHost] = await Promise.all([
+        repository.getAgent(agentId),
+        repository.getTimeline(agentId),
+        repository.getHostSnapshot(),
+      ]);
+      setAgent(nextAgent);
+      setEvents(nextEvents);
+      setHost(nextHost);
+      setNow(Date.now());
+    } finally {
+      setRefreshing(false);
+    }
+  }, [agentId]);
 
   useEffect(() => {
-    void (async () => {
-      setAgent(await getRepository().getAgent(agentId));
-      setEvents(await getRepository().getTimeline(agentId));
-      setHost(await getRepository().getHostSnapshot());
-      setNow(Date.now());
-    })();
-  }, [agentId]);
+    void load();
+  }, [load]);
 
   const canAct = host ? isActionable(host.freshness) : false;
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={colors.accent} />}
+      >
         <Text style={styles.title}>{agent?.title ?? agentId}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.meta}>{agent ? `${agent.provider} · ${agent.model}` : ""}</Text>
