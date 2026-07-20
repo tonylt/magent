@@ -3,9 +3,10 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 
 import { FreshnessBadge } from "../components/FreshnessBadge";
 import { Markdown } from "../components/Markdown";
-import { getRepository } from "../data/instance";
+import { getRepository, subscribeData } from "../data/instance";
 import { buildTimelineSegments, isActionable, timeAgo } from "../domain/selectors";
 import type { TimelineSegment } from "../domain/selectors";
+import { previewText } from "../lib/markdown";
 import type { AgentSession, HostSnapshot, TimelineEvent } from "../domain/types";
 import { colors, font, radius, space, touchTarget } from "../theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -37,6 +38,7 @@ const kindLabel: Record<TimelineEvent["kind"], string> = {
 
 const COLLAPSIBLE: ReadonlySet<TimelineSegment["kind"]> = new Set(["reasoning"]);
 const PREVIEW_LIMIT = 90;
+const LONG_REPLY = 600;
 
 function SegmentView({
   segment,
@@ -77,6 +79,26 @@ function SegmentView({
     );
   }
 
+  // Agent reply: Markdown, with long output collapsed to a preview by default.
+  if (segment.kind === "assistant" || segment.kind === "message") {
+    const long = segment.text.length > LONG_REPLY;
+    const shown = long && !expanded ? previewText(segment.text, LONG_REPLY) : segment.text;
+    return (
+      <View style={[styles.bubble, { borderLeftColor: colors.text }]}>
+        <View style={styles.bubbleHead}>
+          <Text style={[styles.label, styles.agentLabel]}>{kindLabel[segment.kind]}</Text>
+          <Text style={styles.time}>{timeAgo(segment.at, now)}</Text>
+        </View>
+        <Markdown text={shown} />
+        {long ? (
+          <Pressable onPress={onToggle} hitSlop={6}>
+            <Text style={styles.moreToggle}>{expanded ? "\u25b2 Show less" : "\u25bc Show full"}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    );
+  }
+
   const isUser = segment.kind === "user";
   return (
     <View style={[styles.bubble, { borderLeftColor: color }, isUser && styles.userBubble]}>
@@ -86,11 +108,7 @@ function SegmentView({
         </Text>
         <Text style={styles.time}>{timeAgo(segment.at, now)}</Text>
       </View>
-      {segment.text
-        ? segment.kind === "assistant" || segment.kind === "message"
-          ? <Markdown text={segment.text} />
-          : <Text style={styles.bubbleText}>{segment.text}</Text>
-        : null}
+      {segment.text ? <Text style={styles.bubbleText}>{segment.text}</Text> : null}
     </View>
   );
 }
@@ -127,7 +145,12 @@ export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
     void load();
   }, [load]);
 
+  useEffect(() => subscribeData(() => { void load(); }), [load]);
+
   const canAct = host ? isActionable(host.freshness) : false;
+  const artifacts = Array.from(
+    new Map(events.filter((e) => e.artifactPath).map((e) => [e.artifactPath as string, e.at])).entries(),
+  ).map(([path, at]) => ({ path, at }));
 
   return (
     <View style={styles.screen}>
@@ -141,6 +164,15 @@ export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
           {host ? <FreshnessBadge freshness={host.freshness} /> : null}
         </View>
         {agent?.native ? <Text style={styles.readonly}>NATIVE SUBAGENT · READ-ONLY</Text> : null}
+
+        {artifacts.length > 0 ? (
+          <View style={styles.artifacts}>
+            <Text style={styles.artifactsLabel}>OUTPUT · {artifacts.length}</Text>
+            {artifacts.map((a) => (
+              <Text key={a.path} style={styles.artifactPath} numberOfLines={1}>{a.path}</Text>
+            ))}
+          </View>
+        ) : null}
 
         <View style={styles.timeline}>
           {buildTimelineSegments(events).map((segment) => (
@@ -177,6 +209,21 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   meta: { color: colors.textDim, fontSize: font.size.sm },
   readonly: { color: colors.textFaint, fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1 },
+  artifacts: {
+    marginTop: space.sm,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+    gap: space.xs,
+  },
+  artifactsLabel: { color: colors.accent, fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1.5 },
+  artifactPath: { color: colors.text, fontSize: font.size.sm, fontFamily: font.mono },
+  moreToggle: { color: colors.accent, fontSize: font.size.sm, fontWeight: font.weight.bold, marginTop: space.xs },
   timeline: { marginTop: space.md, gap: space.sm },
   bubble: {
     backgroundColor: colors.surface,

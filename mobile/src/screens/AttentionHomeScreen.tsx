@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AttentionCard } from "../components/AttentionCard";
 import { FreshnessBadge } from "../components/FreshnessBadge";
-import { getConnection, getRepository, subscribeConnection, type Connection } from "../data/instance";
+import { getConnection, getRepository, subscribeConnection, subscribeData, type Connection } from "../data/instance";
 import { rankAttention } from "../domain/selectors";
 import type { AgentSession, Attention, HostSnapshot, Workspace } from "../domain/types";
 import { colors, font, space } from "../theme";
@@ -61,6 +61,8 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
     setConnection(getConnection());
     void load();
   }), [load]);
+
+  useEffect(() => subscribeData(() => { void load(); }), [load]);
 
   const ranked = rankAttention(attention);
 
@@ -131,7 +133,7 @@ const styles = StyleSheet.create({
   host: { color: colors.text, fontSize: font.size.xl, fontWeight: font.weight.bold },
   headerRight: { alignItems: "flex-end", gap: space.xs },
   link: { color: colors.accent, fontSize: font.size.sm, fontWeight: font.weight.bold },
-  list: { padding: space.lg, gap: space.md },
+  list: { padding: space.lg, gap: space.sm },
   workspacesLink: { paddingBottom: space.sm },
   workspacesText: { color: colors.textDim, fontSize: font.size.sm, fontWeight: font.weight.bold, letterSpacing: 1 },
   empty: { alignItems: "center", paddingTop: space.xxl * 2, gap: space.sm },

@@ -36,6 +36,15 @@ export interface MarkdownBlock {
   readonly code?: boolean;
 }
 
+/** Truncate long text to a preview at a line boundary, appending an ellipsis. */
+export function previewText(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const slice = text.slice(0, max);
+  const lastBreak = slice.lastIndexOf("\n");
+  const cut = lastBreak > max * 0.5 ? slice.slice(0, lastBreak) : slice;
+  return `${cut.trimEnd()}\n…`;
+}
+
 /** Classify a single (non-fence) line into a block descriptor. */
 export function classifyLine(line: string): MarkdownBlock {
   const heading = /^(#{1,3})\s+(.*)$/.exec(line);

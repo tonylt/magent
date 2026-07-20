@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { classifyLine, parseInline } from "./markdown.ts";
+import { classifyLine, parseInline, previewText } from "./markdown.ts";
 
 test("parseInline splits bold and inline code", () => {
   assert.deepEqual(parseInline("use `edit-article` and **review** it"), [
@@ -26,4 +26,12 @@ test("classifyLine detects headings, bullets, and ordered items", () => {
   assert.equal(ordered.type, "ordered");
   assert.equal(ordered.marker, "2.");
   assert.equal(classifyLine("plain line").type, "paragraph");
+});
+
+test("previewText returns short text unchanged and truncates long text", () => {
+  assert.equal(previewText("short", 100), "short");
+  const long = `${"a".repeat(80)}\n${"b".repeat(80)}`;
+  const preview = previewText(long, 100);
+  assert.ok(preview.endsWith("…"));
+  assert.ok(preview.length < long.length);
 });

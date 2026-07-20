@@ -133,7 +133,7 @@ function truncate(value: string, max = 1200): string {
 }
 
 /** One-line title + expandable detail for a tool call, per ToolCallDetail variant. */
-function describeTool(item: ToolCallTimelineItem): { title: string; detail?: string } {
+function describeTool(item: ToolCallTimelineItem): { title: string; detail?: string; artifactPath?: string } {
   const d = item.detail;
   const detail = (value: string): string | undefined => truncate(value) || undefined;
   switch (d.type) {
@@ -148,9 +148,10 @@ function describeTool(item: ToolCallTimelineItem): { title: string; detail?: str
       return {
         title: `edit ${d.filePath}`,
         detail: detail(d.unifiedDiff ?? [d.oldString ? `- ${d.oldString}` : "", d.newString ? `+ ${d.newString}` : ""].filter(Boolean).join("\n")),
+        artifactPath: d.filePath,
       };
     case "write":
-      return { title: `write ${d.filePath}`, detail: d.content ? detail(d.content) : undefined };
+      return { title: `write ${d.filePath}`, detail: d.content ? detail(d.content) : undefined, artifactPath: d.filePath };
     case "search":
       return {
         title: `search ${d.query}`,
@@ -182,6 +183,7 @@ function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): Timel
     let kind: TimelineKind = "message";
     let text = "";
     let detail: string | undefined;
+    let artifactPath: string | undefined;
     switch (item.type) {
       case "user_message":
         kind = "user";
@@ -200,6 +202,7 @@ function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): Timel
         const described = describeTool(item);
         text = item.status && item.status !== "completed" ? `${described.title} · ${item.status}` : described.title;
         detail = described.detail;
+        artifactPath = described.artifactPath;
         break;
       }
       case "todo":
@@ -217,7 +220,7 @@ function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): Timel
       default:
         break;
     }
-    return { id: `${agentId}-${entry.seqStart}-${index}`, agentId, at: toMs(entry.timestamp), kind, text, detail };
+    return { id: `${agentId}-${entry.seqStart}-${index}`, agentId, at: toMs(entry.timestamp), kind, text, detail, artifactPath };
   });
 }
 
@@ -261,6 +264,7 @@ export async function connectDaemonRepository(
     appVersion?: string;
     connectTimeoutMs?: number;
     onStatusChange?: () => void;
+    onData?: () => void;
   } = { clientId: "paseo-mobile" },
 ): Promise<DaemonConnection> {
   let offer;
@@ -322,6 +326,18 @@ export async function connectDaemonRepository(
 
   const unsubscribeStatus = client.subscribeConnectionStatus(() => options.onStatusChange?.());
 
+  // Live push: invalidate the cache and notify (debounced) on any daemon event so
+  // screens refresh without a manual pull.
+  let dataTimer: ReturnType<typeof setTimeout> | null = null;
+  const unsubscribeData = client.subscribe(() => {
+    agentsCache = null;
+    if (dataTimer) return;
+    dataTimer = setTimeout(() => {
+      dataTimer = null;
+      options.onData?.();
+    }, 700);
+  });
+
   const repository: PaseoRepository = {
     getHostSnapshot: async (): Promise<HostSnapshot> => ({
       hostName: offer.serverId,
@@ -376,6 +392,8 @@ export async function connectDaemonRepository(
     hostName: offer.serverId,
     close: () => {
       unsubscribeStatus();
+      unsubscribeData();
+      if (dataTimer) clearTimeout(dataTimer);
       void client.close();
     },
   };

@@ -72,6 +72,8 @@ export interface TimelineEvent {
   readonly text: string;
   /** Expandable detail (e.g. a tool call's command/output/diff). */
   readonly detail?: string;
+  /** File path this event wrote/edited (surfaced as an artifact). */
+  readonly artifactPath?: string;
   readonly truncated?: boolean;
 }
 

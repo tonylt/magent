@@ -21,9 +21,22 @@ let repository: PaseoRepository = createMockRepository();
 let connection: Connection = { mode: "mock" };
 let daemonClose: (() => void) | null = null;
 const listeners = new Set<() => void>();
+const dataListeners = new Set<() => void>();
 
 function notify(): void {
   for (const listener of listeners) listener();
+}
+
+function notifyData(): void {
+  for (const listener of dataListeners) listener();
+}
+
+/** Subscribe to live daemon data changes (debounced) so screens refresh automatically. */
+export function subscribeData(listener: () => void): () => void {
+  dataListeners.add(listener);
+  return () => {
+    dataListeners.delete(listener);
+  };
 }
 
 let cachedClientId: string | null = null;
@@ -59,6 +72,7 @@ export async function connectWithOffer(pairUrl: string): Promise<void> {
       clientId: clientId(),
       appVersion: "m002-mvp",
       onStatusChange: () => notify(),
+      onData: () => notifyData(),
     });
     repository = conn.repository;
     daemonClose = conn.close;

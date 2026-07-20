@@ -40,7 +40,7 @@ export function WorkspacesScreen({ navigation }: ScreenProps<"Workspaces">) {
             <View style={styles.groupHeader}>
               <View style={[styles.statusDot, { backgroundColor: statusColor[workspace.status] }]} />
               <Text style={styles.groupTitle}>{workspace.name}</Text>
-              <Text style={styles.groupStatus}>{workspace.status.toUpperCase()}</Text>
+              <Text style={styles.groupStatus}>{roots.length > 0 ? `${roots.length} · ` : ""}{workspace.status.toUpperCase()}</Text>
             </View>
             {roots.map((agent) => (
               <Pressable
