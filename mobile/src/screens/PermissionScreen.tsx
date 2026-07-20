@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { repository } from "../data/instance";
+import { getRepository } from "../data/instance";
 import type { PermissionRequest } from "../domain/types";
 import { colors, font, radius, space, touchTarget } from "../theme";
 import type { ScreenProps } from "../navigation";
@@ -11,7 +11,7 @@ export function PermissionScreen({ route, navigation }: ScreenProps<"Permission"
   const [permission, setPermission] = useState<PermissionRequest | null>(null);
 
   useEffect(() => {
-    void (async () => setPermission(await repository.getPermission(permissionId)))();
+    void (async () => setPermission(await getRepository().getPermission(permissionId)))();
   }, [permissionId]);
 
   return (

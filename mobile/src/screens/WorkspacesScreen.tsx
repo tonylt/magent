@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { repository } from "../data/instance";
+import { getRepository } from "../data/instance";
 import type { AgentSession, Workspace } from "../domain/types";
 import { colors, font, radius, space, touchTarget } from "../theme";
 import type { ScreenProps } from "../navigation";
@@ -26,8 +26,8 @@ export function WorkspacesScreen({ navigation }: ScreenProps<"Workspaces">) {
 
   useEffect(() => {
     void (async () => {
-      setWorkspaces(await repository.listWorkspaces());
-      setAgents(await repository.listAgents());
+      setWorkspaces(await getRepository().listWorkspaces());
+      setAgents(await getRepository().listAgents());
     })();
   }, []);
 

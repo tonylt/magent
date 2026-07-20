@@ -1,13 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { AttentionCard } from "../components/AttentionCard";
 import { FreshnessBadge } from "../components/FreshnessBadge";
-import { repository } from "../data/instance";
+import { getConnection, getRepository, subscribeConnection, type Connection } from "../data/instance";
 import { rankAttention } from "../domain/selectors";
 import type { AgentSession, Attention, HostSnapshot, Workspace } from "../domain/types";
 import { colors, font, space } from "../theme";
 import type { ScreenProps } from "../navigation";
+
+function connectionLabel(connection: Connection): string {
+  switch (connection.mode) {
+    case "online":
+      return connection.hostName;
+    case "connecting":
+      return "connecting…";
+    case "error":
+      return "connection error";
+    case "mock":
+    default:
+      return "demo data";
+  }
+}
 
 export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
   const [host, setHost] = useState<HostSnapshot | null>(null);
@@ -16,26 +31,31 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
   const [agents, setAgents] = useState<Record<string, AgentSession>>({});
   const [now, setNow] = useState(() => Date.now());
   const [refreshing, setRefreshing] = useState(false);
+  const [connection, setConnection] = useState<Connection>(() => getConnection());
+
+  useEffect(() => subscribeConnection(() => setConnection(getConnection())), []);
 
   const load = useCallback(async () => {
     setRefreshing(true);
-    const [snapshot, items, workspaceList, agentList] = await Promise.all([
-      repository.getHostSnapshot(),
-      repository.listAttention(),
-      repository.listWorkspaces(),
-      repository.listAgents(),
-    ]);
-    setHost(snapshot);
-    setAttention(items);
-    setWorkspaces(Object.fromEntries(workspaceList.map((w) => [w.id, w])));
-    setAgents(Object.fromEntries(agentList.map((a) => [a.id, a])));
-    setNow(Date.now());
-    setRefreshing(false);
+    try {
+      const repository = getRepository();
+      const [snapshot, items, workspaceList, agentList] = await Promise.all([
+        repository.getHostSnapshot(),
+        repository.listAttention(),
+        repository.listWorkspaces(),
+        repository.listAgents(),
+      ]);
+      setHost(snapshot);
+      setAttention(items);
+      setWorkspaces(Object.fromEntries(workspaceList.map((w) => [w.id, w])));
+      setAgents(Object.fromEntries(agentList.map((a) => [a.id, a])));
+      setNow(Date.now());
+    } finally {
+      setRefreshing(false);
+    }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   const ranked = rankAttention(attention);
 
@@ -44,12 +64,12 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
       <View style={styles.header}>
         <View>
           <Text style={styles.eyebrow}>ATTENTION</Text>
-          <Text style={styles.host}>{host ? host.hostName : "…"}</Text>
+          <Text style={styles.host}>{host ? host.hostName : connectionLabel(connection)}</Text>
         </View>
         <View style={styles.headerRight}>
           {host ? <FreshnessBadge freshness={host.freshness} /> : null}
-          <Pressable onPress={() => navigation.navigate("Workspaces")} hitSlop={12}>
-            <Text style={styles.link}>WORKSPACES ›</Text>
+          <Pressable onPress={() => navigation.navigate("Connect")} hitSlop={12}>
+            <Text style={styles.link}>{connection.mode === "online" ? "HOST ›" : "CONNECT ›"}</Text>
           </Pressable>
         </View>
       </View>
@@ -58,9 +78,7 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
         data={ranked}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={load} tintColor={colors.accent} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={colors.accent} />}
         renderItem={({ item }) => (
           <AttentionCard
             attention={item}
@@ -74,10 +92,19 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
             }
           />
         )}
+        ListHeaderComponent={
+          <Pressable style={styles.workspacesLink} onPress={() => navigation.navigate("Workspaces")}>
+            <Text style={styles.workspacesText}>ALL WORKSPACES ›</Text>
+          </Pressable>
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>All clear</Text>
-            <Text style={styles.emptyCopy}>No Agent session needs your attention.</Text>
+            <Text style={styles.emptyCopy}>
+              {connection.mode === "error"
+                ? connectionLabel(connection)
+                : "No Agent session needs your attention."}
+            </Text>
           </View>
         }
       />
@@ -100,7 +127,9 @@ const styles = StyleSheet.create({
   headerRight: { alignItems: "flex-end", gap: space.xs },
   link: { color: colors.accent, fontSize: font.size.sm, fontWeight: font.weight.bold },
   list: { padding: space.lg, gap: space.md },
+  workspacesLink: { paddingBottom: space.sm },
+  workspacesText: { color: colors.textDim, fontSize: font.size.sm, fontWeight: font.weight.bold, letterSpacing: 1 },
   empty: { alignItems: "center", paddingTop: space.xxl * 2, gap: space.sm },
   emptyTitle: { color: colors.text, fontSize: font.size.xl, fontWeight: font.weight.bold },
-  emptyCopy: { color: colors.textDim, fontSize: font.size.md },
+  emptyCopy: { color: colors.textDim, fontSize: font.size.md, textAlign: "center", paddingHorizontal: space.lg },
 });

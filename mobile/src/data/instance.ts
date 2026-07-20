@@ -1,5 +1,70 @@
 import { createMockRepository, type PaseoRepository } from "./repository";
+import { connectDaemonRepository } from "./paseo/daemon";
 
-// Single repository instance for the app. Swap createMockRepository() for the
-// daemon-wired implementation in M2-S05 without touching screens.
-export const repository: PaseoRepository = createMockRepository();
+// Lightweight module store: holds the active repository (mock or daemon) plus the
+// connection state, and notifies subscribers. Screens read getRepository() at load
+// time; the Attention Home reloads on focus after a connection change.
+
+export type Connection =
+  | { readonly mode: "mock" }
+  | { readonly mode: "connecting" }
+  | { readonly mode: "online"; readonly hostName: string }
+  | { readonly mode: "error"; readonly message: string };
+
+let repository: PaseoRepository = createMockRepository();
+let connection: Connection = { mode: "mock" };
+let daemonClose: (() => void) | null = null;
+const listeners = new Set<() => void>();
+
+function notify(): void {
+  for (const listener of listeners) listener();
+}
+
+let cachedClientId: string | null = null;
+function clientId(): string {
+  if (cachedClientId) return cachedClientId;
+  const uuid = globalThis.crypto?.randomUUID?.();
+  cachedClientId = uuid ?? `paseo-mobile-${Math.random().toString(36).slice(2)}`;
+  return cachedClientId;
+}
+
+export function getRepository(): PaseoRepository {
+  return repository;
+}
+
+export function getConnection(): Connection {
+  return connection;
+}
+
+export function subscribeConnection(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export async function connectWithOffer(pairUrl: string): Promise<void> {
+  connection = { mode: "connecting" };
+  notify();
+  try {
+    daemonClose?.();
+    daemonClose = null;
+    const conn = await connectDaemonRepository(pairUrl, { clientId: clientId(), appVersion: "m002-mvp" });
+    repository = conn.repository;
+    daemonClose = conn.close;
+    connection = { mode: "online", hostName: conn.hostName };
+    notify();
+  } catch (error) {
+    connection = { mode: "error", message: error instanceof Error ? error.message : String(error) };
+    notify();
+    throw error;
+  }
+}
+
+export function useMockData(): void {
+  daemonClose?.();
+  daemonClose = null;
+  repository = createMockRepository();
+  connection = { mode: "mock" };
+  notify();
+}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { FreshnessBadge } from "../components/FreshnessBadge";
-import { repository } from "../data/instance";
+import { getRepository } from "../data/instance";
 import { isActionable, timeAgo } from "../domain/selectors";
 import type { AgentSession, HostSnapshot, TimelineEvent } from "../domain/types";
 import { colors, font, radius, space, touchTarget } from "../theme";
@@ -25,9 +25,9 @@ export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
 
   useEffect(() => {
     void (async () => {
-      setAgent(await repository.getAgent(agentId));
-      setEvents(await repository.getTimeline(agentId));
-      setHost(await repository.getHostSnapshot());
+      setAgent(await getRepository().getAgent(agentId));
+      setEvents(await getRepository().getTimeline(agentId));
+      setHost(await getRepository().getHostSnapshot());
       setNow(Date.now());
     })();
   }, [agentId]);

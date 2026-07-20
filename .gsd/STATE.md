@@ -14,7 +14,8 @@ Last updated: 2026-07-20
 - M2-S01: dark mobile theme tokens; pure domain types + selectors (attention ranking permission>error>finished then recency, freshness/actionability, target-bound Draft, timeAgo) with 6 Node unit tests; `PaseoRepository` interface + deterministic mock data + shared instance.
 - Flagship + loop screens (mock): Attention Home (ranked cards, host/freshness header, pull-to-refresh, empty state), Workspaces/Agent list, Agent timeline (freshness-gated Follow-up), Follow-up Composer (hold-to-dictate mock, review-before-send, never auto-sends, Draft bound to Agent), Permission read-only handoff.
 - Verified: `npm test` (6 pass) and `npm run typecheck` (clean) in `mobile/`. Runtime preview via `expo start` (Expo Go / web) — not run in this environment.
-- Next: M2-S05 wire `PaseoRepository` to the daemon over the Relay contract; design-review polish (M2-S06).
+- M2-S05 (real data): adopted official `@getpaseo/client@0.1.100` (matched to the user's daemon). `src/data/paseo/daemon.ts` parses the pairing offer, connects over relay E2EE (`DaemonClient` + `buildRelayWebSocketUrl`), and maps `fetchWorkspaces`/`fetchAgents`/`fetchAgentTimeline` to domain types; attention derived from agent `requiresAttention`/`attentionReason`. `instance.ts` is a mock↔daemon store; added a Connect screen (paste offer URL) and Home connection state + focus reload. RN polyfills (`react-native-get-random-values`, base-64 atob/btoa) in `index.ts`. Typecheck clean against the real SDK; on-device connect to the daemon not yet verified.
+- Next: verify connect on device; wire Follow-up `.send()`; timeline mapping refinement; live subscriptions/freshness reconciliation; design-review polish (M2-S06).
 
 ## M001 Recent Progress (paused)
 
