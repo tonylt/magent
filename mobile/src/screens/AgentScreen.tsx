@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { FreshnessBadge } from "../components/FreshnessBadge";
+import { Markdown } from "../components/Markdown";
 import { getRepository } from "../data/instance";
 import { buildTimelineSegments, isActionable, timeAgo } from "../domain/selectors";
 import type { TimelineSegment } from "../domain/selectors";
@@ -81,7 +82,11 @@ function SegmentView({
         </Text>
         <Text style={styles.time}>{timeAgo(segment.at, now)}</Text>
       </View>
-      {segment.text ? <Text style={styles.bubbleText}>{segment.text}</Text> : null}
+      {segment.text
+        ? segment.kind === "assistant" || segment.kind === "message"
+          ? <Markdown text={segment.text} />
+          : <Text style={styles.bubbleText}>{segment.text}</Text>
+        : null}
     </View>
   );
 }
