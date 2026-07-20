@@ -4,10 +4,12 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { getRepository } from "../data/instance";
 import type { PermissionRequest } from "../domain/types";
 import { colors, font, radius, space, touchTarget } from "../theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ScreenProps } from "../navigation";
 
 export function PermissionScreen({ route, navigation }: ScreenProps<"Permission">) {
   const { permissionId } = route.params;
+  const insets = useSafeAreaInsets();
   const [permission, setPermission] = useState<PermissionRequest | null>(null);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function PermissionScreen({ route, navigation }: ScreenProps<"Permission"
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>
         <Pressable style={styles.continueBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.continueText}>CONTINUE IN PASEO</Text>
         </Pressable>

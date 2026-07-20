@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import type { Draft } from "../domain/types";
 import { draftMatchesTarget } from "../domain/selectors";
 import { colors, font, radius, space, touchTarget } from "../theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ScreenProps } from "../navigation";
 
 // Mock dictation phrases appended on each hold-release, standing in for native STT
@@ -16,6 +17,7 @@ const MOCK_PHRASES = [
 
 export function ComposerScreen({ route, navigation }: ScreenProps<"Composer">) {
   const { agentId } = route.params;
+  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<Draft>({ agentId, text: "" });
   const [recording, setRecording] = useState(false);
   const [dictations, setDictations] = useState(0);
@@ -54,7 +56,7 @@ export function ComposerScreen({ route, navigation }: ScreenProps<"Composer">) {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>
         <Pressable
           onPressIn={() => setRecording(true)}
           onPressOut={() => {

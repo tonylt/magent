@@ -3,10 +3,12 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 
 import { connectWithOffer, useMockData } from "../data/instance";
 import { colors, font, radius, space, touchTarget } from "../theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ScreenProps } from "../navigation";
 
 export function ConnectScreen({ navigation }: ScreenProps<"Connect">) {
   const [url, setUrl] = useState("");
+  const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +47,7 @@ export function ConnectScreen({ navigation }: ScreenProps<"Connect">) {
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>
         <Pressable
           disabled={busy || url.trim().length === 0}
           style={[styles.connect, (busy || url.trim().length === 0) && styles.disabled]}

@@ -6,6 +6,7 @@ import { getRepository } from "../data/instance";
 import { isActionable, timeAgo } from "../domain/selectors";
 import type { AgentSession, HostSnapshot, TimelineEvent } from "../domain/types";
 import { colors, font, radius, space, touchTarget } from "../theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ScreenProps } from "../navigation";
 
 const kindColor: Record<TimelineEvent["kind"], string> = {
@@ -18,6 +19,7 @@ const kindColor: Record<TimelineEvent["kind"], string> = {
 
 export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
   const { agentId } = route.params;
+  const insets = useSafeAreaInsets();
   const [agent, setAgent] = useState<AgentSession | null>(null);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [host, setHost] = useState<HostSnapshot | null>(null);
@@ -57,7 +59,7 @@ export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>
         <Pressable
           disabled={!canAct}
           onPress={() => navigation.navigate("Composer", { agentId })}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AttentionCard } from "../components/AttentionCard";
 import { FreshnessBadge } from "../components/FreshnessBadge";
@@ -32,6 +33,7 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
   const [now, setNow] = useState(() => Date.now());
   const [refreshing, setRefreshing] = useState(false);
   const [connection, setConnection] = useState<Connection>(() => getConnection());
+  const insets = useSafeAreaInsets();
 
   useEffect(() => subscribeConnection(() => setConnection(getConnection())), []);
 
@@ -61,7 +63,7 @@ export function AttentionHomeScreen({ navigation }: ScreenProps<"Home">) {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + space.sm }]}>
         <View>
           <Text style={styles.eyebrow}>ATTENTION</Text>
           <Text style={styles.host}>{host ? host.hostName : connectionLabel(connection)}</Text>
