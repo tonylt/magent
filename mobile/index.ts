@@ -53,7 +53,6 @@ if (typeof g.btoa !== "function") g.btoa = base64Encode;
       });
     } catch { /* give up */ }
   }
-  console.log("[polyfill] crypto.randomUUID:", typeof g.crypto?.randomUUID);
 })();
 
 import { registerRootComponent } from "expo";

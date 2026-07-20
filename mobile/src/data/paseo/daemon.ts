@@ -203,7 +203,6 @@ export async function connectDaemonRepository(
 
   try {
     await client.connect();
-    console.log("[paseo] connected");
   } catch (error) {
     console.log(`[paseo] connect error: ${redactSecrets(error instanceof Error ? error.message : String(error))}`);
     try {
@@ -214,18 +213,22 @@ export async function connectDaemonRepository(
     throw new Error(connectErrorMessage(error));
   }
 
-  async function agents(): Promise<AgentSnapshotPayload[]> {
-    try {
-      const payload = await client.fetchAgents({
-        page: { limit: 200 },
-        sort: [{ key: "updated_at", direction: "desc" }],
+  // Dedupe the several agent fetches a single screen load triggers (attention +
+  // workspaces + agents) into one request within a short window.
+  let agentsCache: { at: number; value: Promise<AgentSnapshotPayload[]> } | null = null;
+  function agents(): Promise<AgentSnapshotPayload[]> {
+    const now = Date.now();
+    if (agentsCache && now - agentsCache.at < 1500) return agentsCache.value;
+    const value = client
+      .fetchAgents({ page: { limit: 200 }, sort: [{ key: "updated_at", direction: "desc" }] })
+      .then((payload) => payload.entries.map((entry) => entry.agent))
+      .catch((error) => {
+        agentsCache = null;
+        console.log(`[paseo] fetchAgents error: ${redactSecrets(error instanceof Error ? error.message : String(error))}`);
+        return [] as AgentSnapshotPayload[];
       });
-      console.log(`[paseo] fetchAgents ok entries=${payload.entries.length}`);
-      return payload.entries.map((entry) => entry.agent);
-    } catch (error) {
-      console.log(`[paseo] fetchAgents error: ${redactSecrets(error instanceof Error ? error.message : String(error))}`);
-      return [];
-    }
+    agentsCache = { at: now, value };
+    return value;
   }
 
   const repository: PaseoRepository = {
@@ -242,8 +245,6 @@ export async function connectDaemonRepository(
         agents(),
       ]);
       const daemonWorkspaces = workspacesPayload?.entries ?? [];
-      // Numbers only — safe to log (no payload/secret) — to diagnose empty lists.
-      console.log(`[paseo] workspaces=${daemonWorkspaces.length} agents=${agentList.length}`);
       if (daemonWorkspaces.length > 0) {
         return daemonWorkspaces.map((w) => mapWorkspace(w, agentList));
       }
