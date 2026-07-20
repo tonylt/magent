@@ -5,11 +5,12 @@ import {
   attentionReasonRank,
   draftMatchesTarget,
   freshnessLabel,
+  groupTimelineIntoTurns,
   isActionable,
   rankAttention,
   timeAgo,
 } from "./selectors.ts";
-import type { Attention } from "./types.ts";
+import type { Attention, TimelineEvent } from "./types.ts";
 
 function attn(id: string, reason: Attention["reason"], createdAt: number): Attention {
   return { id, agentId: `ag-${id}`, workspaceId: "w1", reason, summary: id, createdAt, freshness: "live" };
@@ -57,4 +58,34 @@ test("timeAgo renders compact glanceable units", () => {
   assert.equal(timeAgo(now - 3 * 60_000, now), "3m");
   assert.equal(timeAgo(now - 2 * 3_600_000, now), "2h");
   assert.equal(timeAgo(now - 2 * 86_400_000, now), "2d");
+});
+
+function tl(id: string, kind: TimelineEvent["kind"], text: string, at = 0): TimelineEvent {
+  return { id, agentId: "a1", at, kind, text };
+}
+
+test("groups a flat timeline into turns with collapsible steps and merged reply", () => {
+  const turns = groupTimelineIntoTurns([
+    tl("1", "user", "write the article"),
+    tl("2", "reasoning", "planning"),
+    tl("3", "tool", "edit-article"),
+    tl("4", "assistant", "Here is the intro"),
+    tl("5", "assistant", "and the body"),
+    tl("6", "user", "make it shorter"),
+    tl("7", "assistant", "Done"),
+  ]);
+  assert.equal(turns.length, 2);
+  assert.equal(turns[0].user, "write the article");
+  assert.equal(turns[0].steps.length, 2);
+  assert.equal(turns[0].reply, "Here is the intro\n\nand the body");
+  assert.equal(turns[1].user, "make it shorter");
+  assert.equal(turns[1].reply, "Done");
+});
+
+test("timeline with no leading user still forms a turn", () => {
+  const turns = groupTimelineIntoTurns([tl("1", "assistant", "hi"), tl("2", "error", "boom")]);
+  assert.equal(turns.length, 1);
+  assert.equal(turns[0].user, null);
+  assert.equal(turns[0].reply, "hi");
+  assert.equal(turns[0].notices.length, 1);
 });

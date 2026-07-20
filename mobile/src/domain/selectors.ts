@@ -7,6 +7,8 @@ import type {
   AttentionReason,
   Draft,
   Freshness,
+  TimelineEvent,
+  TimelineKind,
 } from "./types";
 
 /** Higher rank = more urgent. Permission blocks work, error needs attention, then finished. */
@@ -83,4 +85,49 @@ export function timeAgo(fromMs: number, nowMs: number): string {
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `${hours}h`;
   return `${Math.round(hours / 24)}d`;
+}
+
+export interface TimelineTurnStep {
+  readonly id: string;
+  readonly kind: TimelineKind;
+  readonly text: string;
+}
+
+/**
+ * One conversational turn: the user's prompt, the agent's intermediate steps
+ * (reasoning / tool calls / todos, collapsible), the merged final reply, and any
+ * notices (errors / permissions / finished markers).
+ */
+export interface TimelineTurn {
+  readonly id: string;
+  readonly at: number;
+  user: string | null;
+  readonly steps: TimelineTurnStep[];
+  reply: string;
+  readonly notices: TimelineEvent[];
+}
+
+const STEP_KINDS: ReadonlySet<TimelineKind> = new Set(["reasoning", "tool", "todo"]);
+const REPLY_KINDS: ReadonlySet<TimelineKind> = new Set(["assistant", "message"]);
+
+/** Group a flat timeline into turns. A `user` event starts a new turn. */
+export function groupTimelineIntoTurns(events: readonly TimelineEvent[]): TimelineTurn[] {
+  const turns: TimelineTurn[] = [];
+  for (const event of events) {
+    let turn = turns[turns.length - 1];
+    if (event.kind === "user" || !turn) {
+      turn = { id: event.id, at: event.at, user: null, steps: [], reply: "", notices: [] };
+      turns.push(turn);
+    }
+    if (event.kind === "user") {
+      turn.user = event.text;
+    } else if (STEP_KINDS.has(event.kind)) {
+      turn.steps.push({ id: event.id, kind: event.kind, text: event.text });
+    } else if (REPLY_KINDS.has(event.kind)) {
+      turn.reply = turn.reply ? `${turn.reply}\n\n${event.text}` : event.text;
+    } else {
+      turn.notices.push(event);
+    }
+  }
+  return turns;
 }
