@@ -17,6 +17,23 @@ Last updated: 2026-07-20
 - M2-S05 (real data): adopted official `@getpaseo/client@0.1.100` (matched to the user's daemon). `src/data/paseo/daemon.ts` parses the pairing offer, connects over relay E2EE (`DaemonClient` + `buildRelayWebSocketUrl`), and maps `fetchWorkspaces`/`fetchAgents`/`fetchAgentTimeline` to domain types; attention derived from agent `requiresAttention`/`attentionReason`. `instance.ts` is a mock↔daemon store; added a Connect screen (paste offer URL) and Home connection state + focus reload. RN polyfills (`react-native-get-random-values`, base-64 atob/btoa) in `index.ts`. Typecheck clean against the real SDK; on-device connect to the daemon not yet verified.
 - Next: verify connect on device; wire Follow-up `.send()`; timeline mapping refinement; live subscriptions/freshness reconciliation; design-review polish (M2-S06).
 
+## M2-S05 verified on device (2026-07-20)
+
+Connected the mobile app to the user's real Paseo daemon over relay E2EE and rendered
+real data (12 agents / 11 workspaces). Fixes needed during on-device bring-up:
+- Expo Go compatibility: downgraded to SDK 54.
+- `@getpaseo/relay` broken `exports` (src not shipped) -> Metro alias to `dist`.
+- Hermes polyfills in `index.ts`: `atob/btoa` (base-64) and, critically,
+  `crypto.randomUUID` (SDK RPC ids) built from `getRandomValues`.
+- `fetchAgents`/`fetchWorkspaces` require `page`/`sort`; empty otherwise.
+- Workspaces derived from agents when the daemon returns no workspace rows.
+- No-op SDK logger + redacted connect errors so the offer never hits logs.
+- Deduped the per-load agents fetch (1.5s cache).
+
+Remaining M2-S05/M2-S06: persistence + auto-reconnect (offer in expo-secure-store),
+timeline mapping refinement, Follow-up `.send()`, live subscriptions/freshness,
+design-review polish.
+
 ## M001 Recent Progress (paused)
 
 - `66e0e47` established the approved product, architecture, UI/UX, ADR, prototype, design-review evidence, and M001 roadmap baseline.
