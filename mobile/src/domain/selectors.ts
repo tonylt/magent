@@ -110,18 +110,23 @@ export interface TimelineTurn {
 const STEP_KINDS: ReadonlySet<TimelineKind> = new Set(["reasoning", "tool", "todo"]);
 const REPLY_KINDS: ReadonlySet<TimelineKind> = new Set(["assistant", "message"]);
 
-/** Group a flat timeline into turns. A `user` event starts a new turn. */
+/** Group a flat timeline into turns. A `user` event starts a new turn; an identical
+ * consecutive prompt (daemons sometimes re-emit it) keeps the current turn. */
 export function groupTimelineIntoTurns(events: readonly TimelineEvent[]): TimelineTurn[] {
   const turns: TimelineTurn[] = [];
   for (const event of events) {
+    if (event.kind === "user") {
+      const last = turns[turns.length - 1];
+      if (last && last.user === event.text) continue;
+      turns.push({ id: event.id, at: event.at, user: event.text, steps: [], reply: "", notices: [] });
+      continue;
+    }
     let turn = turns[turns.length - 1];
-    if (event.kind === "user" || !turn) {
+    if (!turn) {
       turn = { id: event.id, at: event.at, user: null, steps: [], reply: "", notices: [] };
       turns.push(turn);
     }
-    if (event.kind === "user") {
-      turn.user = event.text;
-    } else if (STEP_KINDS.has(event.kind)) {
+    if (STEP_KINDS.has(event.kind)) {
       turn.steps.push({ id: event.id, kind: event.kind, text: event.text });
     } else if (REPLY_KINDS.has(event.kind)) {
       turn.reply = turn.reply ? `${turn.reply}\n\n${event.text}` : event.text;

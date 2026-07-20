@@ -89,3 +89,17 @@ test("timeline with no leading user still forms a turn", () => {
   assert.equal(turns[0].reply, "hi");
   assert.equal(turns[0].notices.length, 1);
 });
+
+test("a re-emitted identical prompt does not create a duplicate turn", () => {
+  const turns = groupTimelineIntoTurns([
+    tl("1", "user", "do research"),
+    tl("2", "assistant", "planning"),
+    tl("3", "user", "do research"),
+    tl("4", "tool", "paper-research"),
+    tl("5", "assistant", "done"),
+  ]);
+  assert.equal(turns.length, 1);
+  assert.equal(turns[0].user, "do research");
+  assert.equal(turns[0].steps.length, 1);
+  assert.equal(turns[0].reply, "planning\n\ndone");
+});
