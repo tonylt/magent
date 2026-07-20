@@ -58,18 +58,43 @@ function mapAgent(agent: AgentSnapshotPayload): AgentSession {
   };
 }
 
-function mapWorkspace(workspace: WorkspaceDescriptorPayload, agents: AgentSnapshotPayload[]): Workspace {
-  const own = agents.filter((a) => a.workspaceId === workspace.id);
-  const status: WorkspaceStatus = own.some((a) => a.requiresAttention)
-    ? "attention"
-    : own.some((a) => mapLifecycle(String(a.status)) === "running")
-      ? "active"
-      : "idle";
+function basename(pathValue: string): string {
+  const parts = String(pathValue).split(/[/\\]/).filter(Boolean);
+  return parts[parts.length - 1] ?? pathValue;
+}
+
+function workspaceStatusFrom(agentList: AgentSnapshotPayload[]): WorkspaceStatus {
+  if (agentList.some((a) => a.requiresAttention)) return "attention";
+  if (agentList.some((a) => mapLifecycle(String(a.status)) === "running")) return "active";
+  return "idle";
+}
+
+// Older/agent-by-cwd daemons expose agents but no workspace registry rows. Synthesize
+// one workspace per distinct agent workspaceId (matching the official app's legacy
+// shim) so the Workspaces view is never empty when agents exist.
+function synthesizeWorkspaces(agentList: AgentSnapshotPayload[]): Workspace[] {
+  const byId = new Map<string, AgentSnapshotPayload[]>();
+  for (const agent of agentList) {
+    const id = agent.workspaceId ?? "";
+    const group = byId.get(id);
+    if (group) group.push(agent);
+    else byId.set(id, [agent]);
+  }
+  return [...byId.entries()].map(([id, list]) => ({
+    id,
+    projectId: "",
+    name: list[0]?.cwd ? basename(list[0].cwd) : id || "workspace",
+    status: workspaceStatusFrom(list),
+  }));
+}
+
+function mapWorkspace(workspace: WorkspaceDescriptorPayload, agentList: AgentSnapshotPayload[]): Workspace {
+  const own = agentList.filter((a) => a.workspaceId === workspace.id);
   return {
     id: workspace.id,
     projectId: workspace.projectId,
     name: workspace.name,
-    status,
+    status: workspaceStatusFrom(own),
   };
 }
 
@@ -201,8 +226,17 @@ export async function connectDaemonRepository(
     }),
     listAttention: async () => (await agents()).filter((a) => a.requiresAttention).map(mapAttention),
     listWorkspaces: async () => {
-      const [workspaces, agentList] = await Promise.all([client.fetchWorkspaces(), agents()]);
-      return workspaces.entries.map((w) => mapWorkspace(w, agentList));
+      const [workspacesPayload, agentList] = await Promise.all([
+        client.fetchWorkspaces().catch(() => null),
+        agents(),
+      ]);
+      const daemonWorkspaces = workspacesPayload?.entries ?? [];
+      // Numbers only — safe to log (no payload/secret) — to diagnose empty lists.
+      console.log(`[paseo] workspaces=${daemonWorkspaces.length} agents=${agentList.length}`);
+      if (daemonWorkspaces.length > 0) {
+        return daemonWorkspaces.map((w) => mapWorkspace(w, agentList));
+      }
+      return synthesizeWorkspaces(agentList);
     },
     listAgents: async (workspaceId) => {
       const list = await agents();
