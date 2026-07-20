@@ -3,8 +3,8 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 
 import { FreshnessBadge } from "../components/FreshnessBadge";
 import { getRepository } from "../data/instance";
-import { groupTimelineIntoTurns, isActionable, timeAgo } from "../domain/selectors";
-import type { TimelineTurn } from "../domain/selectors";
+import { buildTimelineSegments, isActionable, timeAgo } from "../domain/selectors";
+import type { TimelineSegment } from "../domain/selectors";
 import type { AgentSession, HostSnapshot, TimelineEvent } from "../domain/types";
 import { colors, font, radius, space, touchTarget } from "../theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -34,72 +34,54 @@ const kindLabel: Record<TimelineEvent["kind"], string> = {
   permission: "PERMISSION",
 };
 
-function stepsSummary(steps: TimelineTurn["steps"]): string {
-  const think = steps.filter((s) => s.kind === "reasoning").length;
-  const tools = steps.filter((s) => s.kind === "tool").length;
-  const todos = steps.filter((s) => s.kind === "todo").length;
-  const parts: string[] = [];
-  if (think) parts.push(`${think} thinking`);
-  if (tools) parts.push(`${tools} tool${tools > 1 ? "s" : ""}`);
-  if (todos) parts.push(`${todos} todo${todos > 1 ? "s" : ""}`);
-  return parts.length > 0 ? parts.join(" · ") : `${steps.length} steps`;
-}
+const COLLAPSIBLE: ReadonlySet<TimelineSegment["kind"]> = new Set(["reasoning"]);
+const PREVIEW_LIMIT = 90;
 
-function TurnCard({
-  turn,
+function SegmentView({
+  segment,
   now,
   expanded,
   onToggle,
 }: {
-  turn: TimelineTurn;
+  segment: TimelineSegment;
   now: number;
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const color = kindColor[segment.kind];
+
+  // Compact tool line.
+  if (segment.kind === "tool") {
+    return (
+      <View style={styles.toolRow}>
+        <Text style={styles.toolText} numberOfLines={1}>{`\u2699  ${segment.text}`}</Text>
+      </View>
+    );
+  }
+
+  // Collapsible reasoning (dim italic), collapsed to a preview by default.
+  if (COLLAPSIBLE.has(segment.kind)) {
+    const long = segment.text.length > PREVIEW_LIMIT;
+    return (
+      <Pressable style={styles.thinking} onPress={long ? onToggle : undefined}>
+        <Text style={styles.thinkingLabel}>{`\u2726 THINKING${long ? (expanded ? "  \u25be" : "  \u25b8") : ""}`}</Text>
+        <Text style={styles.thinkingText} numberOfLines={long && !expanded ? 2 : undefined}>
+          {segment.text}
+        </Text>
+      </Pressable>
+    );
+  }
+
+  const isUser = segment.kind === "user";
   return (
-    <View style={styles.turn}>
-      {turn.user ? (
-        <View style={[styles.bubble, styles.userBubble]}>
-          <View style={styles.bubbleHead}>
-            <Text style={[styles.label, { color: colors.accent }]}>YOU</Text>
-            <Text style={styles.time}>{timeAgo(turn.at, now)}</Text>
-          </View>
-          <Text style={styles.bubbleText}>{turn.user}</Text>
-        </View>
-      ) : null}
-
-      {turn.steps.length > 0 ? (
-        <View style={styles.steps}>
-          <Pressable style={styles.stepsHeader} onPress={onToggle} hitSlop={8}>
-            <Text style={styles.stepsSummary}>{expanded ? "▾" : "▸"}  {stepsSummary(turn.steps)}</Text>
-          </Pressable>
-          {expanded
-            ? turn.steps.map((step) => (
-                <View key={step.id} style={styles.step}>
-                  <Text style={[styles.stepKind, { color: kindColor[step.kind] }]}>{kindLabel[step.kind]}</Text>
-                  <Text style={styles.stepText}>{step.text}</Text>
-                </View>
-              ))
-            : null}
-        </View>
-      ) : null}
-
-      {turn.reply ? (
-        <View style={[styles.bubble, { borderLeftColor: colors.text }]}>
-          <Text style={[styles.label, styles.agentLabel]}>AGENT</Text>
-          <Text style={styles.bubbleText}>{turn.reply}</Text>
-        </View>
-      ) : null}
-
-      {turn.notices.map((notice) => (
-        <View key={notice.id} style={[styles.bubble, { borderLeftColor: kindColor[notice.kind] }]}>
-          <View style={styles.bubbleHead}>
-            <Text style={[styles.label, { color: kindColor[notice.kind] }]}>{kindLabel[notice.kind]}</Text>
-            <Text style={styles.time}>{timeAgo(notice.at, now)}</Text>
-          </View>
-          {notice.text ? <Text style={styles.bubbleText}>{notice.text}</Text> : null}
-        </View>
-      ))}
+    <View style={[styles.bubble, { borderLeftColor: color }, isUser && styles.userBubble]}>
+      <View style={styles.bubbleHead}>
+        <Text style={[styles.label, isUser ? { color: colors.accent } : styles.agentLabel]}>
+          {kindLabel[segment.kind]}
+        </Text>
+        <Text style={styles.time}>{timeAgo(segment.at, now)}</Text>
+      </View>
+      {segment.text ? <Text style={styles.bubbleText}>{segment.text}</Text> : null}
     </View>
   );
 }
@@ -152,13 +134,13 @@ export function AgentScreen({ route, navigation }: ScreenProps<"Agent">) {
         {agent?.native ? <Text style={styles.readonly}>NATIVE SUBAGENT · READ-ONLY</Text> : null}
 
         <View style={styles.timeline}>
-          {groupTimelineIntoTurns(events).map((turn) => (
-            <TurnCard
-              key={turn.id}
-              turn={turn}
+          {buildTimelineSegments(events).map((segment) => (
+            <SegmentView
+              key={segment.id}
+              segment={segment}
               now={now}
-              expanded={Boolean(expanded[turn.id])}
-              onToggle={() => setExpanded((prev) => ({ ...prev, [turn.id]: !prev[turn.id] }))}
+              expanded={Boolean(expanded[segment.id])}
+              onToggle={() => setExpanded((prev) => ({ ...prev, [segment.id]: !prev[segment.id] }))}
             />
           ))}
         </View>
@@ -186,8 +168,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   meta: { color: colors.textDim, fontSize: font.size.sm },
   readonly: { color: colors.textFaint, fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1 },
-  timeline: { marginTop: space.md, gap: space.md },
-  turn: { gap: space.xs },
+  timeline: { marginTop: space.md, gap: space.sm },
   bubble: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
@@ -205,19 +186,11 @@ const styles = StyleSheet.create({
   agentLabel: { color: colors.textDim },
   bubbleText: { color: colors.text, fontSize: font.size.md, lineHeight: 22 },
   time: { color: colors.textFaint, fontSize: font.size.xs },
-  steps: { gap: space.xs },
-  stepsHeader: { paddingVertical: space.xs, paddingHorizontal: space.sm, alignSelf: "flex-start" },
-  stepsSummary: { color: colors.textFaint, fontSize: font.size.sm, fontWeight: font.weight.medium, letterSpacing: 0.5 },
-  step: {
-    marginLeft: space.md,
-    paddingLeft: space.md,
-    borderLeftWidth: 1,
-    borderLeftColor: colors.border,
-    gap: 2,
-    paddingVertical: space.xs,
-  },
-  stepKind: { fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1 },
-  stepText: { color: colors.textDim, fontSize: font.size.sm, lineHeight: 20 },
+  thinking: { paddingHorizontal: space.md, paddingVertical: space.xs, gap: 2, marginLeft: space.xs },
+  thinkingLabel: { color: colors.textFaint, fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1.5 },
+  thinkingText: { color: colors.textFaint, fontSize: font.size.sm, lineHeight: 20, fontStyle: "italic" },
+  toolRow: { paddingHorizontal: space.md, paddingVertical: 2, marginLeft: space.xs },
+  toolText: { color: colors.textDim, fontSize: font.size.sm, fontFamily: font.mono },
   footer: { padding: space.lg, borderTopWidth: 1, borderTopColor: colors.border },
   action: {
     minHeight: touchTarget,

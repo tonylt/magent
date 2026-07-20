@@ -87,52 +87,36 @@ export function timeAgo(fromMs: number, nowMs: number): string {
   return `${Math.round(hours / 24)}d`;
 }
 
-export interface TimelineTurnStep {
+export interface TimelineSegment {
   readonly id: string;
   readonly kind: TimelineKind;
   readonly text: string;
+  readonly at: number;
 }
+
+const MERGEABLE: ReadonlySet<TimelineKind> = new Set(["assistant", "message", "reasoning"]);
 
 /**
- * One conversational turn: the user's prompt, the agent's intermediate steps
- * (reasoning / tool calls / todos, collapsible), the merged final reply, and any
- * notices (errors / permissions / finished markers).
+ * Ordered timeline segments for display: preserves chronological order (thinking,
+ * tool calls, and output stay interleaved), merges consecutive same-kind chunks
+ * (assistant/reasoning streaming), and drops re-emitted identical user prompts.
  */
-export interface TimelineTurn {
-  readonly id: string;
-  readonly at: number;
-  user: string | null;
-  readonly steps: TimelineTurnStep[];
-  reply: string;
-  readonly notices: TimelineEvent[];
-}
-
-const STEP_KINDS: ReadonlySet<TimelineKind> = new Set(["reasoning", "tool", "todo"]);
-const REPLY_KINDS: ReadonlySet<TimelineKind> = new Set(["assistant", "message"]);
-
-/** Group a flat timeline into turns. A `user` event starts a new turn; an identical
- * consecutive prompt (daemons sometimes re-emit it) keeps the current turn. */
-export function groupTimelineIntoTurns(events: readonly TimelineEvent[]): TimelineTurn[] {
-  const turns: TimelineTurn[] = [];
+export function buildTimelineSegments(events: readonly TimelineEvent[]): TimelineSegment[] {
+  const segments: { id: string; kind: TimelineKind; text: string; at: number }[] = [];
+  let lastUserText: string | null = null;
   for (const event of events) {
     if (event.kind === "user") {
-      const last = turns[turns.length - 1];
-      if (last && last.user === event.text) continue;
-      turns.push({ id: event.id, at: event.at, user: event.text, steps: [], reply: "", notices: [] });
+      if (event.text === lastUserText) continue;
+      lastUserText = event.text;
+      segments.push({ id: event.id, kind: event.kind, text: event.text, at: event.at });
       continue;
     }
-    let turn = turns[turns.length - 1];
-    if (!turn) {
-      turn = { id: event.id, at: event.at, user: null, steps: [], reply: "", notices: [] };
-      turns.push(turn);
+    const last = segments[segments.length - 1];
+    if (MERGEABLE.has(event.kind) && last && last.kind === event.kind) {
+      last.text = last.text ? `${last.text}\n\n${event.text}` : event.text;
+      continue;
     }
-    if (STEP_KINDS.has(event.kind)) {
-      turn.steps.push({ id: event.id, kind: event.kind, text: event.text });
-    } else if (REPLY_KINDS.has(event.kind)) {
-      turn.reply = turn.reply ? `${turn.reply}\n\n${event.text}` : event.text;
-    } else {
-      turn.notices.push(event);
-    }
+    segments.push({ id: event.id, kind: event.kind, text: event.text, at: event.at });
   }
-  return turns;
+  return segments;
 }

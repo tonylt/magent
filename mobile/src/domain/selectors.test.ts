@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 
 import {
   attentionReasonRank,
+  buildTimelineSegments,
   draftMatchesTarget,
   freshnessLabel,
-  groupTimelineIntoTurns,
   isActionable,
   rankAttention,
   timeAgo,
@@ -64,42 +64,28 @@ function tl(id: string, kind: TimelineEvent["kind"], text: string, at = 0): Time
   return { id, agentId: "a1", at, kind, text };
 }
 
-test("groups a flat timeline into turns with collapsible steps and merged reply", () => {
-  const turns = groupTimelineIntoTurns([
+test("timeline segments keep order and merge consecutive same-kind chunks", () => {
+  const segments = buildTimelineSegments([
     tl("1", "user", "write the article"),
     tl("2", "reasoning", "planning"),
-    tl("3", "tool", "edit-article"),
-    tl("4", "assistant", "Here is the intro"),
-    tl("5", "assistant", "and the body"),
-    tl("6", "user", "make it shorter"),
-    tl("7", "assistant", "Done"),
+    tl("3", "reasoning", "more planning"),
+    tl("4", "tool", "edit-article"),
+    tl("5", "assistant", "Here is the intro"),
+    tl("6", "assistant", "and the body"),
   ]);
-  assert.equal(turns.length, 2);
-  assert.equal(turns[0].user, "write the article");
-  assert.equal(turns[0].steps.length, 2);
-  assert.equal(turns[0].reply, "Here is the intro\n\nand the body");
-  assert.equal(turns[1].user, "make it shorter");
-  assert.equal(turns[1].reply, "Done");
+  assert.deepEqual(segments.map((s) => s.kind), ["user", "reasoning", "tool", "assistant"]);
+  assert.equal(segments[1].text, "planning\n\nmore planning");
+  assert.equal(segments[3].text, "Here is the intro\n\nand the body");
 });
 
-test("timeline with no leading user still forms a turn", () => {
-  const turns = groupTimelineIntoTurns([tl("1", "assistant", "hi"), tl("2", "error", "boom")]);
-  assert.equal(turns.length, 1);
-  assert.equal(turns[0].user, null);
-  assert.equal(turns[0].reply, "hi");
-  assert.equal(turns[0].notices.length, 1);
-});
-
-test("a re-emitted identical prompt does not create a duplicate turn", () => {
-  const turns = groupTimelineIntoTurns([
+test("re-emitted identical prompt is dropped, order otherwise preserved", () => {
+  const segments = buildTimelineSegments([
     tl("1", "user", "do research"),
     tl("2", "assistant", "planning"),
     tl("3", "user", "do research"),
     tl("4", "tool", "paper-research"),
     tl("5", "assistant", "done"),
   ]);
-  assert.equal(turns.length, 1);
-  assert.equal(turns[0].user, "do research");
-  assert.equal(turns[0].steps.length, 1);
-  assert.equal(turns[0].reply, "planning\n\ndone");
+  assert.deepEqual(segments.map((s) => s.kind), ["user", "assistant", "tool", "assistant"]);
+  assert.equal(segments.filter((s) => s.kind === "user").length, 1);
 });
