@@ -51,12 +51,16 @@ function SegmentView({
 }) {
   const color = kindColor[segment.kind];
 
-  // Compact tool line.
+  // Compact tool line, expandable to its detail (command/output/diff/results).
   if (segment.kind === "tool") {
+    const hasDetail = Boolean(segment.detail);
     return (
-      <View style={styles.toolRow}>
-        <Text style={styles.toolText} numberOfLines={1}>{`\u2699  ${segment.text}`}</Text>
-      </View>
+      <Pressable style={styles.toolRow} onPress={hasDetail ? onToggle : undefined}>
+        <Text style={styles.toolText} numberOfLines={expanded ? undefined : 1}>
+          {`\u2699  ${segment.text}${hasDetail ? (expanded ? "  \u25be" : "  \u25b8") : ""}`}
+        </Text>
+        {hasDetail && expanded ? <Text style={styles.toolDetail}>{segment.detail}</Text> : null}
+      </Pressable>
     );
   }
 
@@ -194,8 +198,19 @@ const styles = StyleSheet.create({
   thinking: { paddingHorizontal: space.md, paddingVertical: space.xs, gap: 2, marginLeft: space.xs },
   thinkingLabel: { color: colors.textFaint, fontSize: font.size.xs, fontWeight: font.weight.bold, letterSpacing: 1.5 },
   thinkingText: { color: colors.textFaint, fontSize: font.size.sm, lineHeight: 20, fontStyle: "italic" },
-  toolRow: { paddingHorizontal: space.md, paddingVertical: 2, marginLeft: space.xs },
+  toolRow: { paddingHorizontal: space.md, paddingVertical: 2, marginLeft: space.xs, gap: space.xs },
   toolText: { color: colors.textDim, fontSize: font.size.sm, fontFamily: font.mono },
+  toolDetail: {
+    color: colors.textFaint,
+    fontSize: font.size.xs,
+    fontFamily: font.mono,
+    lineHeight: 17,
+    backgroundColor: colors.bg,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: space.sm,
+  },
   footer: { padding: space.lg, borderTopWidth: 1, borderTopColor: colors.border },
   action: {
     minHeight: touchTarget,

@@ -91,6 +91,7 @@ export interface TimelineSegment {
   readonly id: string;
   readonly kind: TimelineKind;
   readonly text: string;
+  readonly detail?: string;
   readonly at: number;
 }
 
@@ -102,7 +103,7 @@ const MERGEABLE: ReadonlySet<TimelineKind> = new Set(["assistant", "message", "r
  * (assistant/reasoning streaming), and drops re-emitted identical user prompts.
  */
 export function buildTimelineSegments(events: readonly TimelineEvent[]): TimelineSegment[] {
-  const segments: { id: string; kind: TimelineKind; text: string; at: number }[] = [];
+  const segments: { id: string; kind: TimelineKind; text: string; detail?: string; at: number }[] = [];
   let lastUserText: string | null = null;
   for (const event of events) {
     if (event.kind === "user") {
@@ -116,7 +117,7 @@ export function buildTimelineSegments(events: readonly TimelineEvent[]): Timelin
       last.text = last.text ? `${last.text}\n\n${event.text}` : event.text;
       continue;
     }
-    segments.push({ id: event.id, kind: event.kind, text: event.text, at: event.at });
+    segments.push({ id: event.id, kind: event.kind, text: event.text, detail: event.detail, at: event.at });
   }
   return segments;
 }

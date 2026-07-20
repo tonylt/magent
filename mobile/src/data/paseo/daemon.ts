@@ -9,6 +9,7 @@ import type {
 } from "@getpaseo/client/internal/daemon-client";
 import { parseConnectionOfferFromUrl } from "@getpaseo/protocol/connection-offer";
 import { buildRelayWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
+import type { ToolCallTimelineItem } from "@getpaseo/protocol/agent-types";
 import type {
   AgentSnapshotPayload,
   WorkspaceDescriptorPayload,
@@ -126,11 +127,61 @@ function mapFreshness(state: ConnectionState): "live" | "syncing" | "stale" {
   }
 }
 
+function truncate(value: string, max = 1200): string {
+  const trimmed = value.trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max)}\n…` : trimmed;
+}
+
+/** One-line title + expandable detail for a tool call, per ToolCallDetail variant. */
+function describeTool(item: ToolCallTimelineItem): { title: string; detail?: string } {
+  const d = item.detail;
+  const detail = (value: string): string | undefined => truncate(value) || undefined;
+  switch (d.type) {
+    case "shell":
+      return {
+        title: d.command,
+        detail: detail([`$ ${d.command}`, d.output ?? "", d.exitCode != null ? `[exit ${d.exitCode}]` : ""].filter(Boolean).join("\n\n")),
+      };
+    case "read":
+      return { title: `read ${d.filePath}`, detail: d.content ? detail(d.content) : undefined };
+    case "edit":
+      return {
+        title: `edit ${d.filePath}`,
+        detail: detail(d.unifiedDiff ?? [d.oldString ? `- ${d.oldString}` : "", d.newString ? `+ ${d.newString}` : ""].filter(Boolean).join("\n")),
+      };
+    case "write":
+      return { title: `write ${d.filePath}`, detail: d.content ? detail(d.content) : undefined };
+    case "search":
+      return {
+        title: `search ${d.query}`,
+        detail: detail([
+          d.numMatches != null ? `${d.numMatches} matches` : "",
+          d.numFiles != null ? `${d.numFiles} files` : "",
+          ...(d.filePaths ?? []),
+          ...(d.webResults ?? []).map((w) => `${w.title} — ${w.url}`),
+        ].filter(Boolean).join("\n")),
+      };
+    case "fetch":
+      return { title: `fetch ${d.url}`, detail: detail([d.url, d.result ?? ""].filter(Boolean).join("\n\n")) };
+    case "worktree_setup":
+      return { title: `worktree ${d.branchName}`, detail: detail(d.log) };
+    case "sub_agent":
+      return { title: `subagent ${d.subAgentType ?? ""}`.trim(), detail: detail([d.description ?? "", d.log].filter(Boolean).join("\n\n")) };
+    case "plan":
+      return { title: "plan", detail: detail(d.text) };
+    case "plain_text":
+      return { title: d.label ?? item.name, detail: d.text ? detail(d.text) : undefined };
+    default:
+      return { title: item.name };
+  }
+}
+
 function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): TimelineEvent[] {
   return payload.entries.map((entry, index) => {
     const item = entry.item;
     let kind: TimelineKind = "message";
     let text = "";
+    let detail: string | undefined;
     switch (item.type) {
       case "user_message":
         kind = "user";
@@ -144,10 +195,13 @@ function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): Timel
         kind = "reasoning";
         text = item.text;
         break;
-      case "tool_call":
+      case "tool_call": {
         kind = item.status === "failed" ? "error" : "tool";
-        text = item.status && item.status !== "completed" ? `${item.name} · ${item.status}` : item.name;
+        const described = describeTool(item);
+        text = item.status && item.status !== "completed" ? `${described.title} · ${item.status}` : described.title;
+        detail = described.detail;
         break;
+      }
       case "todo":
         kind = "todo";
         text = item.items.map((t) => `${t.completed ? "✓" : "○"} ${t.text}`).join("\n");
@@ -163,7 +217,7 @@ function mapTimeline(agentId: string, payload: FetchAgentTimelinePayload): Timel
       default:
         break;
     }
-    return { id: `${agentId}-${entry.seqStart}-${index}`, agentId, at: toMs(entry.timestamp), kind, text };
+    return { id: `${agentId}-${entry.seqStart}-${index}`, agentId, at: toMs(entry.timestamp), kind, text, detail };
   });
 }
 

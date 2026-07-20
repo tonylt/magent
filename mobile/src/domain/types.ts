@@ -70,6 +70,8 @@ export interface TimelineEvent {
   readonly at: number;
   readonly kind: TimelineKind;
   readonly text: string;
+  /** Expandable detail (e.g. a tool call's command/output/diff). */
+  readonly detail?: string;
   readonly truncated?: boolean;
 }
 
